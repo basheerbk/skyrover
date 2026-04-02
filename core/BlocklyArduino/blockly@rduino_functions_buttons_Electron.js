@@ -102,14 +102,14 @@ BlocklyDuino.saveXmlFile = function () {
 
     var data = Blockly.Xml.domToPrettyText(xml);
     var datenow = Date.now();
-    var defaultFilename = "blockcode_project" + datenow + ".sky";
+    var defaultFilename = "skyrover_project" + datenow + ".sky";
 
     // Check for Electron native save
     if (window.electronAPI && window.electronAPI.saveFile) {
         window.electronAPI.saveFile({
             content: data,
             defaultPath: defaultFilename,
-            filters: [{ name: 'Blockcode Project', extensions: ['sky', 'xml'] }]
+            filters: [{ name: 'Skyrover Project', extensions: ['sky', 'xml'] }]
         }).then(function (result) {
             if (result.success) {
                 if (window.addNewMessage) addNewMessage("Project saved successfully!", "success");

@@ -1,11 +1,11 @@
-; NSIS Script for Blockcode IDE - Offline Installer
+; NSIS Script for Skyrover IDE - Offline Installer
 ; Handles large files (600MB+) better than Inno Setup
 ; Build with: makensis installer\installer.nsi
 
-!define PRODUCT_NAME "Blockcode"
+!define PRODUCT_NAME "Skyrover"
 !define PRODUCT_VERSION "1.0.14"
-!define PRODUCT_PUBLISHER "Blockcode"
-!define PRODUCT_EXE "Blockcode.exe"
+!define PRODUCT_PUBLISHER "Skyrover.ai"
+!define PRODUCT_EXE "Skyrover.ai.exe"
 !define PRODUCT_UNINST_KEY "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_NAME}"
 
 ; Modern UI
@@ -13,8 +13,8 @@
 
 ; Settings
 Name "${PRODUCT_NAME} ${PRODUCT_VERSION}"
-OutFile "..\dist-electron\installer\Blockcode.Setup.${PRODUCT_VERSION}.exe"
-InstallDir "$PROGRAMFILES64\Blockcode"
+OutFile "..\dist-electron\installer\Skyrover.ai.Setup.${PRODUCT_VERSION}.exe"
+InstallDir "$PROGRAMFILES64\Skyrover.ai"
 InstallDirRegKey HKLM "${PRODUCT_UNINST_KEY}" "InstallLocation"
 RequestExecutionLevel admin
 
@@ -84,7 +84,7 @@ Section Uninstall
   RMDir /r "$INSTDIR"
   
   ; Clean up AppData cores (but preserve user data)
-  RMDir /r "$LOCALAPPDATA\Blockcode\arduino_ide_cores"
+  RMDir /r "$LOCALAPPDATA\Skyrover.ai\arduino_ide_cores"
   
   ; Remove registry keys
   DeleteRegKey HKLM "${PRODUCT_UNINST_KEY}"

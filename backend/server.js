@@ -273,7 +273,7 @@ app.post('/api/ai/chat', async (req, res) => {
     }
 
     const sysText = [
-      'You are Blockcode AI Mentor for K-12 students and STEM teachers using Blockly + Arduino/ESP32.',
+      'You are Skyrover AI Mentor for K-12 students and STEM teachers using Blockly + Arduino/ESP32.',
       'This is NOT blind chat: every request includes current project context. Use it.',
       'Primary goal: teach by guiding thinking, not by dumping full answers too early.',
       'Use age-appropriate language. Keep explanations short, concrete, and encouraging.',

@@ -83,7 +83,7 @@ npm run build:bundle
 
 ```ini
 [Unit]
-Description=Blockcode IDE
+Description=Skyrover Block IDE
 After=network.target
 
 [Service]

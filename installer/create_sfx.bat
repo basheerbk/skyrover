@@ -15,10 +15,10 @@ if %ERRORLEVEL% NEQ 0 (
 
 REM Create the SFX installer
 cd /d "%~dp0.."
-7z a -sfx7z.sfx "dist-electron\installer\Blockcode.Setup.1.0.13.exe" ".\dist-electron\win-unpacked\*" -mx=5 -mmt=on
+7z a -sfx7z.sfx "dist-electron\installer\Skyrover.ai.Setup.1.0.13.exe" ".\dist-electron\win-unpacked\*" -mx=5 -mmt=on
 
 echo.
 echo Done! Installer created at:
-echo dist-electron\installer\Blockcode.Setup.1.0.13.exe
+echo dist-electron\installer\Skyrover.ai.Setup.1.0.13.exe
 echo.
 pause

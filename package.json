@@ -1,7 +1,7 @@
 {
-  "name": "blockcode-ide",
+  "name": "skyrover-ide",
   "version": "2.0.0",
-  "description": "Blockcode — Blockly web IDE (Arduino / ESP32)",
+  "description": "Blockly@rduino — Web IDE (Arduino / ESP32)",
   "private": true,
   "scripts": {
     "build:bundle": "webpack --config webpack.config.js",
@@ -17,7 +17,7 @@
     "ide",
     "esp32"
   ],
-  "author": "Blockcode",
+  "author": "Skyrover.ai",
   "license": "MIT",
   "devDependencies": {
     "@babel/core": "^7.29.0",
