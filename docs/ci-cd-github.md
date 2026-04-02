@@ -63,3 +63,11 @@ npm run dev
 # other terminal:
 npm run smoke:test
 ```
+
+## First push: verify Actions is green
+
+1. Add secrets `DEPLOY_SSH_KEY`, `DEPLOY_HOST`, `DEPLOY_USER` (see above).
+2. `git push -u origin main`.
+3. Open **GitHub → Actions → Build & Deploy** and confirm the workflow succeeds (build, smoke, rsync, restart, `curl` `/healthz`).
+
+If the deploy step fails with SSH errors, confirm the deploy public key is in `~/.ssh/authorized_keys` on the VM and that `DEPLOY_SSH_KEY` is the **private** key (full PEM text).
