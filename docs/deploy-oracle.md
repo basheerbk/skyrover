@@ -321,6 +321,59 @@ Renewals are usually installed as a **cron**/**systemd timer** by certbot; check
 sudo certbot renew --dry-run
 ```
 
+## AI Mentor (Sarvam) on the Node server
+
+The Blockly **AI Mentor** calls Sarvam from `backend/server.js`. It needs an API key in the **process environment**, not in the repo or GitHub.
+
+1. Get a subscription key from [Sarvam dashboard](https://dashboard.sarvam.ai/).
+2. On the VM, store it in a file only `opc` (or root) can read:
+
+```bash
+sudo mkdir -p /etc/skyrover
+sudo nano /etc/skyrover/mentor.env
+```
+
+3. Put **one line** (no quotes, no spaces around `=`):
+
+```ini
+SARVAM_API_KEY=your_actual_key_here
+```
+
+Optional (defaults match `server.js` if omitted):
+
+```ini
+SARVAM_MODEL=sarvam-m
+SARVAM_BASE_URL=https://api.sarvam.ai/v1/chat/completions
+```
+
+Sarvam sometimes documents **`SARVAM_API_SUBSCRIPTION_KEY`** — that name works too (same value as `SARVAM_API_KEY`).
+
+4. Lock down the file and let **`opc`** read it (the service user):
+
+```bash
+sudo chown root:opc /etc/skyrover/mentor.env
+sudo chmod 640 /etc/skyrover/mentor.env
+```
+
+5. Ensure **systemd** loads that file. If your unit does not already include it, add a drop-in:
+
+```bash
+sudo mkdir -p /etc/systemd/system/skyrover.service.d
+printf '%s\n' '[Service]' 'EnvironmentFile=-/etc/skyrover/mentor.env' | sudo tee /etc/systemd/system/skyrover.service.d/mentor.conf
+sudo systemctl daemon-reload
+sudo systemctl restart skyrover
+```
+
+6. Confirm (key value is **not** printed):
+
+```bash
+sudo systemctl show skyrover --property=Environment --no-pager | tr ' ' '\n' | grep -i SARVAM || true
+```
+
+If you see `SARVAM_API_KEY` in the dump, the variable is loaded (value may be hidden depending on systemd version). A practical check: open the site, use **AI Mentor** — you should get a real answer instead of “not available”.
+
+**Security:** Never commit `mentor.env`, never put the key in GitHub Actions secrets for the *build* unless you intentionally inject it into the app image (this setup keeps it only on the VM).
+
 ## Troubleshooting
 
 - **`journalctl -u skyrover -f`** — app logs  

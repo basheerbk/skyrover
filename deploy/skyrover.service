@@ -10,6 +10,8 @@ WorkingDirectory=/opt/skyrover/app
 Environment=NODE_ENV=production
 Environment=HOST=127.0.0.1
 Environment=PORT=5005
+# Secrets: create /etc/skyrover/mentor.env on the VM (see docs/deploy-oracle.md). Leading - = optional file.
+EnvironmentFile=-/etc/skyrover/mentor.env
 ExecStart=/usr/bin/node backend/server.js
 Restart=always
 RestartSec=5

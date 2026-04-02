@@ -173,7 +173,9 @@ app.use((req, res, next) => {
 });
 
 /** Sarvam AI config (default OpenAI-compatible endpoint). */
-const SARVAM_API_KEY = process.env.SARVAM_API_KEY || '';
+const SARVAM_API_KEY = String(
+  process.env.SARVAM_API_KEY || process.env.SARVAM_API_SUBSCRIPTION_KEY || ''
+).trim();
 const SARVAM_MODEL = process.env.SARVAM_MODEL || 'sarvam-m';
 const SARVAM_BASE_URL =
   process.env.SARVAM_BASE_URL || 'https://api.sarvam.ai/v1/chat/completions';
