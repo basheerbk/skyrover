@@ -168,6 +168,11 @@ export { BlockIDETheme, workspaceConfig } from './theme/blockide_theme.js';
 // ── Core exports for use in index.html ──────────────────────────────────────
 export { Blockly, Arduino };
 export { compileAndFlashEsp32Web, compileEsp32ForWeb } from './esp32_web_flash.js';
+export {
+  compileAndFlashUnoWeb,
+  compileUnoForWeb,
+  flashUnoWithWebSerial,
+} from './avr_uno_web_flash.js';
 
 /**
  * Initialise the Blockly workspace.

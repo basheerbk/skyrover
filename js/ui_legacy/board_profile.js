@@ -5,12 +5,39 @@
   var fqbnToBoardId = {
     'arduino:avr:uno': 'arduino_uno',
     'arduino:avr:mega': 'arduino_mega',
+    'arduino:avr:mega:cpu=atmega2560': 'arduino_mega',
     'arduino:avr:nano': 'arduino_nano',
+    'arduino:avr:nano:cpu=atmega328': 'arduino_nano',
     'esp32:esp32:esp32': 'skyrover',
     'esp32:esp32:esp32c3': 'esp32c3promini',
     'esp32:esp32:esp32s3': 'esp32s3',
     'esp8266:esp8266:nodemcuv2': 'esp8266',
   };
+
+  /** Canonical Arduino-CLI FQBN for compile/upload from the active `profile.defaultBoardKey`. */
+  var boardKeyToFqbn = {
+    skyrover: 'esp32:esp32:esp32',
+    esp32c3promini: 'esp32:esp32:esp32c3',
+    esp8266: 'esp8266:esp8266:nodemcuv2',
+    arduino_uno: 'arduino:avr:uno',
+    arduino_nano: 'arduino:avr:nano:cpu=atmega328',
+    arduino_mega: 'arduino:avr:mega:cpu=atmega2560',
+  };
+
+  function resolveBoardFqbnFromProfile() {
+    if (typeof profile === 'undefined' || !profile.defaultBoard) {
+      return 'arduino:avr:uno';
+    }
+    var key = profile.defaultBoardKey;
+    if (key && boardKeyToFqbn[key]) {
+      return boardKeyToFqbn[key];
+    }
+    var ua = profile.defaultBoard.upload_arg;
+    if (typeof ua === 'string' && ua.trim()) {
+      return ua.trim();
+    }
+    return 'arduino:avr:uno';
+  }
 
   w.updatePinConfigurations = function () {
     console.log('updatePinConfigurations called - should be overridden by block files');
@@ -66,6 +93,15 @@
       if (boardId === 'esp32c3promini' && profile.defaultBoard) {
         profile.defaultBoard.upload_arg = 'esp32:esp32:esp32c3';
       }
+      if (boardId === 'arduino_uno' && profile.defaultBoard) {
+        profile.defaultBoard.upload_arg = 'arduino:avr:uno';
+      }
+      if (boardId === 'arduino_nano' && profile.defaultBoard) {
+        profile.defaultBoard.upload_arg = 'arduino:avr:nano:cpu=atmega328';
+      }
+      if (boardId === 'arduino_mega' && profile.defaultBoard) {
+        profile.defaultBoard.upload_arg = 'arduino:avr:mega:cpu=atmega2560';
+      }
       if (typeof currentDigitalPins === 'undefined') w.currentDigitalPins = [];
       if (typeof currentPwmPins === 'undefined') w.currentPwmPins = [];
       if (typeof currentAnalogPins === 'undefined') w.currentAnalogPins = [];
@@ -95,5 +131,6 @@
   w.refreshPinDropdowns = refreshPinDropdowns;
   w.updateBoardProfile = updateBoardProfile;
   w.initializePinSystem = initializePinSystem;
+  w.resolveBoardFqbnFromProfile = resolveBoardFqbnFromProfile;
 })(typeof window !== 'undefined' ? window : null);
 

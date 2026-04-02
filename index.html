@@ -9,7 +9,7 @@
 
             var GA_ID = 'G-J06T1TPVKN';
             var isElectron = window.electronAPI && window.electronAPI.isElectron;
-            var appName = isElectron ? 'Skyrover Desktop App' : 'Skyrover Web';
+            var appName = isElectron ? 'Blockcode Desktop' : 'Blockcode Web';
             var scriptLoaded = false;
             var fallbackMode = false;
             var clientID = null;
@@ -249,7 +249,7 @@
     <link rel="icon" type="image/png" href="favicon.png" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>Skyrover.ai</title>
+    <title>Blockcode</title>
     <link rel="stylesheet" href="css/poppins-local.css" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -270,6 +270,7 @@
     <!-- UI management: paths named *Electron* are the shared BlocklyDuino shell; they branch on window.electronAPI (desktop) vs browser. -->
     <script type="text/javascript" src="core/BlocklyArduino/blockly@rduino_core_Electron.js"></script>
     <script type="text/javascript" src="core/BlocklyArduino/blockly@rduino_boards.js"></script>
+    <script type="text/javascript" src="js/ui_legacy/board_profile.js"></script>
     <script type="text/javascript" src="core/BlocklyArduino/blockly@rduino_functions_buttons_Electron.js"></script>
     <script type="text/javascript" src="core/BlocklyArduino/blockly@rduino_tools.js"></script>
     <script type="text/javascript" src="core/BlocklyArduino/blockly@rduino_visual.js"></script>
@@ -499,8 +500,8 @@
         <div class="header-main-row">
             <div class="header-left-group">
                 <div id="logo_Titre">
-                    <a href="./index.html" class="header-logo-link" title="Skyrover">
-                        <span id="clearLink" class="header-logo-block" aria-label="skyrover.ai — home">skyrover<span class="header-logo-tld">.ai</span></span>
+                    <a href="./index.html" class="header-logo-link" title="Blockcode">
+                        <span id="clearLink" class="header-logo-block" aria-label="Blockcode — home">Blockcode</span>
                     </a>
                 </div>
                 <div id="header_titres">
@@ -2788,15 +2789,9 @@
                         }
                     }
                 }
-                var board = (typeof profile !== 'undefined' && profile.defaultBoard && profile.defaultBoard['upload_arg'])
-                    ? profile.defaultBoard['upload_arg']
+                var board = typeof window.resolveBoardFqbnFromProfile === 'function'
+                    ? window.resolveBoardFqbnFromProfile()
                     : 'arduino:avr:uno';
-                if (typeof profile !== 'undefined' && profile.defaultBoardKey === 'skyrover') {
-                    board = 'esp32:esp32:esp32';
-                }
-                if (typeof profile !== 'undefined' && profile.defaultBoardKey === 'esp32c3promini') {
-                    board = 'esp32:esp32:esp32c3';
-                }
                 var codeTrimmed = code ? code.trim() : '';
                 var emptySketch =
                     !codeTrimmed ||
@@ -2817,16 +2812,10 @@
 
                 // Snapshot for ESP web flash: after we async-close Serial + setTimeout(doUpload), user gesture is gone —
                 // reuse the already-authorized port from getPorts() instead of requestPort().
-                var boardEarly = (typeof profile !== 'undefined' && profile.defaultBoard && profile.defaultBoard['upload_arg'])
-                    ? profile.defaultBoard['upload_arg']
+                var boardEarly = typeof window.resolveBoardFqbnFromProfile === 'function'
+                    ? window.resolveBoardFqbnFromProfile()
                     : 'arduino:avr:uno';
-                if (typeof profile !== 'undefined' && profile.defaultBoardKey === 'skyrover') {
-                    boardEarly = 'esp32:esp32:esp32';
-                }
-                if (typeof profile !== 'undefined' && profile.defaultBoardKey === 'esp32c3promini') {
-                    boardEarly = 'esp32:esp32:esp32c3';
-                }
-                var useWebEspEarly = !isElectron && (boardEarly.indexOf('esp32:') === 0 || boardEarly.indexOf('esp8266:') === 0);
+                var useWebEspEarly = !isElectron && (boardEarly.indexOf('esp32:') === 0 || boardEarly.indexOf('esp8266:') === 0 || boardEarly === 'arduino:avr:uno');
                 var savedWebSerialForEspFlash =
                     serialConnected &&
                     useWebEspEarly &&
@@ -2889,17 +2878,9 @@
                         }
                     }
 
-                    let board = (typeof profile !== 'undefined' && profile.defaultBoard && profile.defaultBoard['upload_arg'])
-                        ? profile.defaultBoard['upload_arg']
+                    let board = typeof window.resolveBoardFqbnFromProfile === 'function'
+                        ? window.resolveBoardFqbnFromProfile()
                         : 'arduino:avr:uno';
-
-                    // Ensure Skyrover always uses ESP32 FQBN
-                    if (typeof profile !== 'undefined' && profile.defaultBoardKey === 'skyrover') {
-                        board = 'esp32:esp32:esp32';
-                    }
-                    if (typeof profile !== 'undefined' && profile.defaultBoardKey === 'esp32c3promini') {
-                        board = 'esp32:esp32:esp32c3';
-                    }
 
                     // Check if code exists and has meaningful content (not just empty functions)
                     const codeTrimmed = code ? code.trim() : '';
@@ -2988,13 +2969,89 @@
                         return;
                     }
 
+                    // Web + Arduino Uno: compile on server, upload via Web Serial (STK500 / Optiboot).
+                    var useWebUnoChip = !isElectron && board === 'arduino:avr:uno';
+                    if (useWebUnoChip) {
+                        if (!navigator.serial) {
+                            addMessage(
+                                typeof window.isSecureContext !== 'undefined' && !window.isSecureContext
+                                    ? 'Web Serial is disabled on http:// with a network address. Use HTTPS, or SSH -L 5005:127.0.0.1:5005 … then http://localhost:5005 (see docs/deploy-oracle.md).'
+                                    : 'Web Serial not available — use Chrome or Edge (latest).',
+                                'error'
+                            );
+                            return;
+                        }
+                        if (typeof window.BlockIDE === 'undefined' || typeof window.BlockIDE.compileAndFlashUnoWeb !== 'function') {
+                            addMessage('Uno web flash bundle missing. Run npm run build:bundle and reload.', 'error');
+                            return;
+                        }
+                        if (typeof window.BlockIDE.compileUnoForWeb !== 'function') {
+                            addMessage('Uno compile helper missing from bundle. Run npm run build:bundle and reload.', 'error');
+                            return;
+                        }
+                        if (window.BlockIDEUploadState && window.BlockIDEUploadState.move) {
+                            window.BlockIDEUploadState.move('compile', thisRunId);
+                        }
+                        addMessage('Arduino Uno (browser): compiling on server, then uploading over USB.', 'info');
+                        try {
+                            var preFlashSerialPortUno = null;
+                            if (savedWebSerialForEspFlash && typeof window.blockideWebSerialParseIndex === 'function') {
+                                var _wsIxUno = window.blockideWebSerialParseIndex(savedWebSerialForEspFlash);
+                                if (_wsIxUno != null) {
+                                    try {
+                                        var _wsListUno = await navigator.serial.getPorts();
+                                        preFlashSerialPortUno = _wsListUno[_wsIxUno] || null;
+                                    } catch (eWsUno) { /* noop */ }
+                                }
+                                if (!preFlashSerialPortUno) {
+                                    addMessage('Could not reopen USB after Serial closed — compiling on server anyway. Click Upload again to upload.', 'info');
+                                    try {
+                                        await window.BlockIDE.compileUnoForWeb(BACKEND_URL || '', code, board);
+                                        addMessage('Compilation succeeded. Turn Serial off, then click Upload once to pick USB and upload.', 'success');
+                                    } catch (compileOnlyErr) {
+                                        addMessage('Compile failed: ' + (compileOnlyErr && compileOnlyErr.message ? compileOnlyErr.message : compileOnlyErr), 'error');
+                                    }
+                                    finishUploadUiState();
+                                    return;
+                                }
+                            }
+                            var flashOptsUno = {
+                                backendUrl: BACKEND_URL || '',
+                                code: code,
+                                board: board,
+                                onLog: function (s) { addMessage(String(s), 'info'); },
+                                serialPort: preFlashSerialPortUno || undefined
+                            };
+                            if (typeof capturedEspPortPromise !== 'undefined') {
+                                flashOptsUno.portPromise = capturedEspPortPromise;
+                            }
+                            await window.BlockIDE.compileAndFlashUnoWeb(flashOptsUno);
+                            if (window.BlockIDEUploadState && window.BlockIDEUploadState.move) {
+                                window.BlockIDEUploadState.move('done', thisRunId);
+                                window.BlockIDEUploadState.move('idle', thisRunId);
+                            }
+                            addMessage('Upload completed successfully!', 'success');
+                        } catch (err) {
+                            if (window.BlockIDEUploadState && window.BlockIDEUploadState.move) {
+                                window.BlockIDEUploadState.move('error', thisRunId);
+                                window.BlockIDEUploadState.move('idle', thisRunId);
+                            }
+                            addMessage('Upload failed: ' + (err && err.message ? err.message : err), 'error');
+                        } finally {
+                            if (!window.BlockIDEUploadState || thisRunId === window.BlockIDEUploadState.currentRunId()) {
+                                finishUploadUiState();
+                            }
+                        }
+                        return;
+                    }
+
                     const port = portSelect.value;
                     if (!port || port === 'no_com' || port === '__add_usb_serial__') {
-                        addMessage('Upload failed: Choose a USB serial device (＋ Add) or use ESP32/ESP8266 web flash.', 'error');
+                        addMessage('Upload failed: Choose a USB serial device (＋ Add) or use ESP32/ESP8266 / Arduino Uno web upload.', 'error');
                         return;
                     }
                     if (!isElectron && window.blockideIsWebSerialPortValue && window.blockideIsWebSerialPortValue(port)) {
-                        addMessage('Upload failed: Browser USB ports cannot be sent to the cloud server. Use ESP32/ESP8266 web flash, or Arduino IDE for other boards.', 'error');
+                        addMessage('Upload failed: Browser USB ports cannot be sent to the cloud server. Use ESP32/ESP8266 or Arduino Uno web upload, or Arduino IDE for other boards.', 'error');
                         return;
                     }
                     addMessage('Uploading to board (' + board + ') on port ' + port + '...', 'info');
@@ -3674,6 +3731,18 @@
                             <img id="esp8266_board_image" src="media/new_boards/image-2.png" alt="Node MCU">
                             <div class="board-label">Node MCU</div>
                         </div>
+                        <div class="board-card" data-fqbn="arduino:avr:uno">
+                            <img id="arduino_uno_board_image" src="media/new_boards/arduino_uno.png" alt="Arduino Uno">
+                            <div class="board-label">Arduino Uno</div>
+                        </div>
+                        <div class="board-card" data-fqbn="arduino:avr:nano:cpu=atmega328">
+                            <img id="arduino_nano_board_image" src="media/new_boards/arduino_nano.png" alt="Arduino Nano">
+                            <div class="board-label">Arduino Nano</div>
+                        </div>
+                        <div class="board-card" data-fqbn="arduino:avr:mega:cpu=atmega2560">
+                            <img id="arduino_mega_board_image" src="media/new_boards/arduino_mega.png" alt="Arduino Mega">
+                            <div class="board-label">Arduino Mega</div>
+                        </div>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -3740,7 +3809,7 @@
                     <h4 class="modal-title">New Update Available!</h4>
                 </div>
                 <div class="modal-body">
-                    <p id="updateMessage">A new version of Skyrover IDE is available.</p>
+                    <p id="updateMessage">A new version of Blockcode is available.</p>
                     <div id="updateProgressContainer" style="display:none; margin-top: 15px;">
                         <div class="progress">
                             <div id="updateProgressBar" class="progress-bar progress-bar-striped active"
@@ -4130,7 +4199,6 @@
     <script src="js/ui_legacy/upload_state_runtime.js"></script>
     <script src="js/ui_legacy/telemetry_markers.js"></script>
     <script src="js/ui_legacy/version_stamp.js"></script>
-    <script src="js/ui_legacy/board_profile.js"></script>
     <script src="dist/ui_islands.js"></script>
     <script src="js/ui_legacy/header_modern_runtime.js"></script>
 </body>

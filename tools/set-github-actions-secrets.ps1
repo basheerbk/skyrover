@@ -44,7 +44,7 @@ if (-not $remote) {
   Write-Error 'No git remote ''origin''. Add origin first (e.g. https://github.com/OWNER/REPO.git).'
 }
 
-# owner/repo from https://github.com/basheerbk/skyrover.git or git@github.com:basheerbk/skyrover.git
+# owner/repo from https://github.com/OWNER/REPO.git or git@github.com:OWNER/REPO.git
 $repo = $null
 if ($remote -match 'github\.com[:/]([^/]+)/([^/.]+)') {
   $repo = "$($Matches[1])/$($Matches[2])"

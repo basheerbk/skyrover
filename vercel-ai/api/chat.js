@@ -34,7 +34,7 @@ function ideProfileAppend(ideMode, toolboxFile) {
   if (ideMode === 'advanced') {
     return `\n\n[IDE profile: ADVANCED]${tf} The user has the **full Arduino toolbox** (many block types and libraries). Match vocabulary to the **actual blocks listed** in their workspace — standard names (Digital write, Analog read, device-specific blocks) and deeper explanations are OK when helpful. Stay friendly and clear.`;
   }
-  return `\n\n[IDE profile: BEGINNER — Skyrover]${tf} The toolbox uses **friendly names** in **LED, Arduino, Logic, Loop, Buzzer, Sensors, Actuators, Display**. Prefer those exact names from context (e.g. "Blink built-in LED", "Turn LED on/off on pin", "Wait (milliseconds)") — not only generic "Digital write" / "delay()" unless their block list shows those Arduino blocks or you explain the underlying idea.`;
+  return `\n\n[IDE profile: BEGINNER — Blockcode]${tf} The toolbox uses **friendly names** in **LED, Arduino, Logic, Loop, Buzzer, Sensors, Actuators, Display**. Prefer those exact names from context (e.g. "Blink built-in LED", "Turn LED on/off on pin", "Wait (milliseconds)") — not only generic "Digital write" / "delay()" unless their block list shows those Arduino blocks or you explain the underlying idea.`;
 }
 
 function resolveIdeModeFromContext(context) {

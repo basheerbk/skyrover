@@ -1,5 +1,5 @@
 [Unit]
-Description=Skyrover Block IDE backend
+Description=Blockcode IDE backend
 After=network.target
 
 [Service]

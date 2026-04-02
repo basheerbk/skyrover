@@ -1,10 +1,10 @@
-; Inno Setup script to build a single-file installer for Skyrover IDE
+; Inno Setup script to build a single-file installer for Blockcode IDE
 ; Build with: iscc installer\installer.iss
 
-#define MyAppName "Skyrover"
+#define MyAppName "Blockcode"
 #define MyAppVersion "1.0.14"
-#define MyAppPublisher "Skyrover.ai"
-#define MyAppExeName "Skyrover.ai.exe"
+#define MyAppPublisher "Blockcode"
+#define MyAppExeName "Blockcode.exe"
 
 [Setup]
 ; NOTE: The value of AppId uniquely identifies this application.
@@ -13,10 +13,10 @@ AppName={#MyAppName}
 AppVersion={#MyAppVersion}
 AppPublisher={#MyAppPublisher}
 ; Install to Program Files (Standard for Admin installs)
-DefaultDirName={autopf}\Skyrover.ai
+DefaultDirName={autopf}\Blockcode
 DefaultGroupName={#MyAppName}
 OutputDir=..\dist-electron\installer
-OutputBaseFilename=Skyrover.ai.Setup.{#MyAppVersion}
+OutputBaseFilename=Blockcode.Setup.{#MyAppVersion}
 ; SourceDir is expected to be relative to this .iss file location
 SourceDir=..\dist-electron\win-unpacked
 SetupIconFile=C:\Users\ASUS\blockide\ico\favicon.ico
@@ -59,5 +59,5 @@ Filename: "{app}\{#MyAppExeName}"; Description: "Launch {#MyAppName}"; Flags: no
 
 [UninstallDelete]
 ; Clean up the managed Cores folder on uninstall
-Type: filesandordirs; Name: "{localappdata}\Skyrover.ai\arduino_ide_cores"
+Type: filesandordirs; Name: "{localappdata}\Blockcode\arduino_ide_cores"
 ; NOTE: We intentionally DO NOT delete arduino_ide_user to preserve user sketches/libs

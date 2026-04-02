@@ -2,16 +2,16 @@
 
 ## Create the private repository (no `gh` CLI)
 
-1. On GitHub: **New repository** → name e.g. `skyrover-ide` → **Private** → **do not** initialize with README (you already have commits locally).
+1. On GitHub: **New repository** → name e.g. `blockcode-ide` → **Private** → **do not** initialize with README (you already have commits locally).
 2. In the project folder:
 
 ```bash
-git remote add origin https://github.com/YOUR_USER/skyrover-ide.git
+git remote add origin https://github.com/YOUR_USER/blockcode-ide.git
 git branch -M main
 git push -u origin main
 ```
 
-Use SSH remote instead if you prefer SSH keys: `git@github.com:YOUR_USER/skyrover-ide.git`.
+Use SSH remote instead if you prefer SSH keys: `git@github.com:YOUR_USER/blockcode-ide.git`.
 
 ## Secrets: two places GitHub accepts them
 

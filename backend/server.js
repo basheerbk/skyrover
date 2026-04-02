@@ -155,6 +155,40 @@ async function collectEsp32Artifacts(buildDir) {
   return out;
 }
 
+/**
+ * Intel HEX for Arduino Uno (Optiboot / STK500v1). Skips *with_bootloader.hex*.
+ * @param {string} buildDir
+ * @returns {Promise<string>} absolute path to .ino.hex
+ */
+async function collectAvrUnoIntelHexPath(buildDir) {
+  async function walk(dir) {
+    const names = await fs.readdir(dir);
+    /** @type {string[]} */
+    const matches = [];
+    for (const name of names) {
+      const full = path.join(dir, name);
+      const st = await fs.stat(full);
+      if (st.isDirectory()) {
+        matches.push(...(await walk(full)));
+      } else {
+        const lower = name.toLowerCase();
+        if (lower.endsWith('.ino.hex') && !lower.includes('with_bootloader')) {
+          matches.push(full);
+        }
+      }
+    }
+    return matches;
+  }
+  const hexFiles = await walk(buildDir);
+  if (hexFiles.length === 0) {
+    throw new Error(
+      'No .ino.hex in AVR build output. Is the arduino:avr core installed (arduino-cli core install arduino:avr)?'
+    );
+  }
+  hexFiles.sort((a, b) => a.length - b.length);
+  return hexFiles[0];
+}
+
 app.use(express.json());
 app.use(express.static(path.join(__dirname, '..')));
 
@@ -239,7 +273,7 @@ app.post('/api/ai/chat', async (req, res) => {
     }
 
     const sysText = [
-      'You are Skyrover AI Mentor for K-12 students and STEM teachers using Blockly + Arduino/ESP32.',
+      'You are Blockcode AI Mentor for K-12 students and STEM teachers using Blockly + Arduino/ESP32.',
       'This is NOT blind chat: every request includes current project context. Use it.',
       'Primary goal: teach by guiding thinking, not by dumping full answers too early.',
       'Use age-appropriate language. Keep explanations short, concrete, and encouraging.',
@@ -615,7 +649,8 @@ app.post('/compile', async (req, res) => {
 
   const returnBinsEsp =
     boardFQBN.startsWith('esp32:') || boardFQBN.startsWith('esp8266:');
-  if (returnBinaries && !returnBinsEsp) {
+  const returnBinsAvrUno = boardFQBN === 'arduino:avr:uno';
+  if (returnBinaries && !returnBinsEsp && !returnBinsAvrUno) {
     await logAudit({
       event: 'compile',
       user: resolveAuditUser(req),
@@ -626,13 +661,13 @@ app.post('/compile', async (req, res) => {
       codeLength: code.length,
       returnBinaries: true,
       success: false,
-      error: 'returnBinaries only for esp32 / esp8266 FQBN',
+      error: 'returnBinaries only for esp32 / esp8266 / arduino:avr:uno',
       ...(AUDIT_INCLUDE_CODE ? { code } : {}),
     });
     return res.status(400).json({
       success: false,
       message:
-        'returnBinaries is only supported for ESP32 (esp32:…) or ESP8266 (esp8266:…) so the browser can flash via USB.',
+        'returnBinaries is only supported for ESP32, ESP8266, or arduino:avr:uno (browser USB flash).',
     });
   }
 
@@ -665,6 +700,35 @@ app.post('/compile', async (req, res) => {
       });
 
       if (returnBinaries) {
+        if (returnBinsAvrUno) {
+          const hexPath = await collectAvrUnoIntelHexPath(buildDir);
+          const hexIntel = await fs.readFile(hexPath, 'utf8');
+          await fs.rm(tempDir, { recursive: true, force: true });
+          console.log('[COMPILE] Compilation successful (Arduino Uno Intel HEX for web upload)');
+          await logAudit({
+            event: 'compile',
+            user: resolveAuditUser(req),
+            requestId: resolveRequestId(req),
+            clientIp: req.ip || null,
+            board: boardFQBN,
+            codeSha256: hashSketch(code),
+            codeLength: code.length,
+            returnBinaries: true,
+            success: true,
+            artifactCount: 1,
+            ...(AUDIT_INCLUDE_CODE ? { code } : {}),
+          });
+          return res.json({
+            success: true,
+            message: stdout || 'Compilation successful',
+            output: stdout,
+            hexIntel,
+            flashProfile: 'arduino_uno_web',
+            baudRate: 115200,
+            requestId: resolveRequestId(req) || undefined,
+          });
+        }
+
         const is8266 = boardFQBN.startsWith('esp8266:');
         const flashOpts = is8266 ? getEsp8266FlashOptions(boardFQBN) : getEsp32FlashOptions(boardFQBN);
         const artifacts = is8266

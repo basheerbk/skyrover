@@ -881,7 +881,7 @@ When you click **"Add Blocks"**, the modal groups all optional libraries into th
 | Tools | (tools sub-menu) |
 | Options | Global configuration / Difficulty level / Block categories |
 | Help | — |
-| About | About Skyrover.ai |
+| About | About Blockcode |
 
 ### Difficulty Levels (Toolbox Presets)
 

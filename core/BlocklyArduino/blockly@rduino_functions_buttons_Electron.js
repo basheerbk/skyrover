@@ -102,14 +102,14 @@ BlocklyDuino.saveXmlFile = function () {
 
     var data = Blockly.Xml.domToPrettyText(xml);
     var datenow = Date.now();
-    var defaultFilename = "skyrover_project" + datenow + ".sky";
+    var defaultFilename = "blockcode_project" + datenow + ".sky";
 
     // Check for Electron native save
     if (window.electronAPI && window.electronAPI.saveFile) {
         window.electronAPI.saveFile({
             content: data,
             defaultPath: defaultFilename,
-            filters: [{ name: 'Skyrover Project', extensions: ['sky', 'xml'] }]
+            filters: [{ name: 'Blockcode Project', extensions: ['sky', 'xml'] }]
         }).then(function (result) {
             if (result.success) {
                 if (window.addNewMessage) addNewMessage("Project saved successfully!", "success");
@@ -342,16 +342,11 @@ BlocklyDuino.verify_local_Click = function () {
 
     console.log("Verify button clicked");
     var code = BlocklyDuino.getSketchSourceForCompile();
-    var board = (typeof profile !== 'undefined' && profile.defaultBoard && profile.defaultBoard['upload_arg'])
-        ? profile.defaultBoard['upload_arg']
-        : 'arduino:avr:uno';
-
-    if (typeof profile !== 'undefined' && profile.defaultBoardKey === 'skyrover') {
-        board = 'esp32:esp32:esp32';
-    }
-    if (typeof profile !== 'undefined' && profile.defaultBoardKey === 'esp32c3promini') {
-        board = 'esp32:esp32:esp32c3';
-    }
+    var board = (typeof window.resolveBoardFqbnFromProfile === 'function')
+        ? window.resolveBoardFqbnFromProfile()
+        : ((typeof profile !== 'undefined' && profile.defaultBoard && profile.defaultBoard['upload_arg'])
+            ? profile.defaultBoard['upload_arg']
+            : 'arduino:avr:uno');
 
     if (window.electronAPI && window.electronAPI.compileCode) {
         if (window.addNewMessage) addNewMessage(MSG['span_verify_local'] + "...", "info");
@@ -421,16 +416,11 @@ BlocklyDuino.uploadClick = function () {
 
     var code = BlocklyDuino.getSketchSourceForCompile();
     var port = $('#serialport_ide').val();
-    var board = (typeof profile !== 'undefined' && profile.defaultBoard && profile.defaultBoard['upload_arg'])
-        ? profile.defaultBoard['upload_arg']
-        : 'arduino:avr:uno';
-
-    if (typeof profile !== 'undefined' && profile.defaultBoardKey === 'skyrover') {
-        board = 'esp32:esp32:esp32';
-    }
-    if (typeof profile !== 'undefined' && profile.defaultBoardKey === 'esp32c3promini') {
-        board = 'esp32:esp32:esp32c3';
-    }
+    var board = (typeof window.resolveBoardFqbnFromProfile === 'function')
+        ? window.resolveBoardFqbnFromProfile()
+        : ((typeof profile !== 'undefined' && profile.defaultBoard && profile.defaultBoard['upload_arg'])
+            ? profile.defaultBoard['upload_arg']
+            : 'arduino:avr:uno');
 
     if (!code || code.trim() === "") {
         if (window.addNewMessage) addNewMessage("No code to upload. Please generate code first.", "warning");
@@ -524,10 +514,56 @@ BlocklyDuino.uploadClick = function () {
         return;
     }
 
+    // Web: Arduino Uno — compile + Web Serial (Optiboot / STK500)
+    var useUnoWebSerial = board === 'arduino:avr:uno';
+    if (useUnoWebSerial && typeof navigator !== 'undefined' && navigator.serial &&
+        typeof window.BlockIDE !== 'undefined' && typeof window.BlockIDE.compileAndFlashUnoWeb === 'function') {
+        if (window.addNewMessage) addNewMessage(MSG['span_flash_local'] + " (Web Serial, Uno)…", "info");
+        var portPromiseUno = null;
+        try {
+            portPromiseUno = navigator.serial.requestPort();
+        } catch (eUnoGesture) {
+            portPromiseUno = Promise.reject(eUnoGesture);
+        }
+        window.BlockIDE.compileAndFlashUnoWeb({
+            backendUrl: BlocklyDuino.getBackendBaseUrl(),
+            code: code,
+            board: board,
+            portPromise: portPromiseUno,
+            onLog: function (s) {
+                if (window.addNewMessage) addNewMessage(String(s), "info");
+            }
+        }).then(function () {
+            if (window.BlockIDEUploadState && window.BlockIDEUploadState.move) {
+                window.BlockIDEUploadState.move('done', uploadRunId);
+                window.BlockIDEUploadState.move('idle', uploadRunId);
+            }
+            if (window.addNewMessage) addNewMessage("Done uploading!", "success");
+        }).catch(function (err) {
+            if (window.BlockIDEUploadState && window.BlockIDEUploadState.move) {
+                window.BlockIDEUploadState.move('error', uploadRunId);
+                window.BlockIDEUploadState.move('idle', uploadRunId);
+            }
+            if (window.addNewMessage) addNewMessage("Upload failed: " + (err.message || err), "error");
+        });
+        return;
+    }
+    if (useUnoWebSerial && (!navigator || !navigator.serial)) {
+        if (window.addNewMessage) {
+            addNewMessage(
+                (typeof window.isSecureContext !== 'undefined' && !window.isSecureContext)
+                    ? 'Web Serial is disabled on non-secure pages. Use HTTPS or localhost.'
+                    : 'Web Serial not available in this browser/device. Use desktop Chrome or Edge.',
+                'error'
+            );
+        }
+        return;
+    }
+
     if (typeof window.blockideIsWebSerialPortValue === 'function' && window.blockideIsWebSerialPortValue(port)) {
         if (window.addNewMessage) {
             addNewMessage(
-                'The cloud server cannot upload to a USB port on your PC. For ESP32/ESP8266 use Upload (Web Serial). For Uno/other boards use the desktop app, run Block IDE locally, or Arduino IDE.',
+                'The cloud server cannot upload to a USB port on your PC. For ESP32/ESP8266 or Arduino Uno use Upload (Web Serial). For other boards use the desktop app, run Block IDE locally, or Arduino IDE.',
                 'warning'
             );
         }

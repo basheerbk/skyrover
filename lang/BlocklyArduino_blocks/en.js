@@ -525,7 +525,7 @@ Blockly.Msg.ARDUINO_CONSTRAIN_TOOLTIP = 'Constrains a number to be within a rang
 Blockly.Msg.ARDUINO_INOUT_BUILDIN_LED_HELPURL = "http://arduino.cc/en/Reference/DigitalWrite";
 Blockly.Msg.ARDUINO_INOUT_BUILDIN_LED_INPUT = "Built-in LED";
 Blockly.Msg.ARDUINO_INOUT_BUILDIN_LED_TOOLTIP = "off or turn on the LED on the Arduino board";
-/** Beginner / Skyrover — explicit setup step for an LED on a digital pin */
+/** Beginner / Blockcode — explicit setup step for an LED on a digital pin */
 Blockly.Msg.BASIC_LED_SETUP_TITLE = "Add LED on pin";
 Blockly.Msg.BASIC_LED_SETUP_TOOLTIP =
   "Put this in the setup section (top of your program, runs once). It sets the pin as OUTPUT so you can control an LED. Then use Turn LED on/off or Blink blocks in the loop. (If you skip this, those blocks still prepare the pin for you—this block helps you learn setup vs loop.)";
