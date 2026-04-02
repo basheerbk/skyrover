@@ -1,5 +1,18 @@
 # GitHub Actions CI/CD (Oracle VM)
 
+## Create the private repository (no `gh` CLI)
+
+1. On GitHub: **New repository** → name e.g. `skyrover-ide` → **Private** → **do not** initialize with README (you already have commits locally).
+2. In the project folder:
+
+```bash
+git remote add origin https://github.com/YOUR_USER/skyrover-ide.git
+git branch -M main
+git push -u origin main
+```
+
+Use SSH remote instead if you prefer SSH keys: `git@github.com:YOUR_USER/skyrover-ide.git`.
+
 ## Secrets (repository → Settings → Secrets and variables → Actions)
 
 | Secret | Example | Description |
@@ -9,6 +22,8 @@
 | `DEPLOY_USER` | `opc` | SSH user with write access to `/opt/skyrover/app` |
 
 Paste the **private** key including `-----BEGIN ... KEY-----` and `-----END ... KEY-----` lines.
+
+On Windows, open `deploy/github-actions-deploy` in a text editor, copy the entire file into the `DEPLOY_SSH_KEY` secret (the file is listed in `.gitignore` and must never be committed).
 
 ## One-time: deploy SSH key
 
