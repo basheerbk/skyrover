@@ -13,13 +13,66 @@ git push -u origin main
 
 Use SSH remote instead if you prefer SSH keys: `git@github.com:YOUR_USER/skyrover-ide.git`.
 
-## Secrets (repository → Settings → Secrets and variables → Actions)
+## Secrets: two places GitHub accepts them
+
+You can use **either** approach (the workflow supports both):
+
+1. **Repository secrets** — Settings → **Secrets and variables** → **Actions** → **Repository secrets**
+2. **Environment secrets** — Settings → **Environments** → create an environment (see below)
+
+### Using Environments (the “Environments / Configure …” screen)
+
+Do **not** name the environment `DEPLOY_SSH_KEY`. That string is a **secret name**, not an environment name.
+
+1. Settings → **Environments** → **New environment** → name it **`production`** (or another name; if you change it, update `environment:` in `.github/workflows/build.yml`).
+2. Open **Configure production** (or your environment name).
+3. Under **Environment secrets** → **Add environment secret** — add **three** separate secrets:
+
+| Name | Value |
+|------|--------|
+| `DEPLOY_SSH_KEY` | Full private key from `deploy/github-actions-deploy` (including `BEGIN` / `END` lines) |
+| `DEPLOY_HOST` | `68.233.112.68` |
+| `DEPLOY_USER` | `opc` |
+
+4. **Deployment branches** can stay **No restriction** for a private solo repo, or restrict to `main` if you want.
+
+Optional: put `DEPLOY_HOST` / `DEPLOY_USER` under **Environment variables** instead (not secret). The workflow currently reads them as **secrets**; keep all three as environment secrets unless we change the workflow to use `vars.DEPLOY_HOST`.
+
+### Repository secrets (alternative)
+
+Settings → **Secrets and variables** → **Actions** → **New repository secret**
 
 | Secret | Example | Description |
 |--------|---------|-------------|
 | `DEPLOY_SSH_KEY` | *(full private key)* | PEM from `deploy/github-actions-deploy` (see below) |
 | `DEPLOY_HOST` | `68.233.112.68` | Oracle VM public IP or hostname |
 | `DEPLOY_USER` | `opc` | SSH user with write access to `/opt/skyrover/app` |
+
+### Add secrets from this project (GitHub CLI)
+
+1. Install GitHub CLI: `winget install --id GitHub.cli` (then open a **new** terminal), or download the Windows installer from [cli.github.com](https://cli.github.com/).
+2. Sign in: `gh auth login` (choose **GitHub.com**, **HTTPS**, authenticate the browser).
+3. From the **repo root**:
+
+```powershell
+.\tools\set-github-actions-secrets.ps1
+```
+
+The script reads `git remote origin`, uploads `deploy/github-actions-deploy` as `DEPLOY_SSH_KEY`, and sets host/user (defaults: `68.233.112.68` / `opc`). Override:
+
+```powershell
+$env:DEPLOY_HOST = 'your.vm.ip'; $env:DEPLOY_USER = 'opc'; .\tools\set-github-actions-secrets.ps1
+```
+
+For **environment** secrets (matches the Environments UI), create the **`production`** environment on GitHub first, then:
+
+```powershell
+.\tools\set-github-actions-secrets.ps1 -Environment production
+```
+
+Verify: `gh secret list -R basheerbk/skyrover` or `gh secret list -R basheerbk/skyrover --env production`.
+
+### Add secrets in the browser (manual)
 
 Paste the **private** key including `-----BEGIN ... KEY-----` and `-----END ... KEY-----` lines.
 

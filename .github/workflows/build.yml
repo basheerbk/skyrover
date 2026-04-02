@@ -8,6 +8,9 @@ on:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+    # Use Settings → Environments → e.g. "production" → Environment secrets (DEPLOY_*).
+    # Repository-level Actions secrets still work if you prefer those instead.
+    environment: production
 
     steps:
       - uses: actions/checkout@v4
