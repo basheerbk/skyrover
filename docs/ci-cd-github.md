@@ -124,3 +124,13 @@ npm run smoke:test
 3. Open **GitHub → Actions → Build & Deploy** and confirm the workflow succeeds (build, smoke, rsync, restart, `curl` `/healthz`).
 
 If the deploy step fails with SSH errors, confirm the deploy public key is in `~/.ssh/authorized_keys` on the VM and that `DEPLOY_SSH_KEY` is the **private** key (full PEM text).
+
+### rsync: `Permission denied` / `mkstemp` on `/opt/skyrover/app`
+
+`DEPLOY_USER` must own the app tree. If you ever copied files with `sudo`, some paths may be `root`-owned and CI will fail. On the VM:
+
+```bash
+sudo chown -R opc:opc /opt/skyrover/app
+```
+
+(Replace `opc` with your deploy user if different.)
