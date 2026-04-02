@@ -13,14 +13,25 @@
     API_ERROR: Constants.API_ERROR_MESSAGE || 'The assistant returned an error.',
     SERVER_CONFIG:
       Constants.SERVER_CONFIG_MESSAGE ||
-      'The AI server is not configured correctly. Check Sarvam API key on Vercel and redeploy.',
+      'The AI mentor is not available on this site right now. Please try again later.',
     BAD_JSON: Constants.BAD_JSON_MESSAGE || 'Bad request.',
     EMPTY_MESSAGES: Constants.EMPTY_MESSAGES_MESSAGE || 'Nothing to send.',
     SERVICE_UNAVAILABLE: Constants.SERVICE_UNAVAILABLE_MESSAGE || 'The assistant service is temporarily busy. Please try again in a moment.'
   };
 
+  /** Never show server/provider details in the chat (ops info belongs in logs only). */
+  var ERROR_CODES_NO_SERVER_HINT = {
+    SERVER_CONFIG: true,
+    API_ERROR: true,
+    NETWORK: true,
+    UNAUTHORIZED: true
+  };
+
   function getErrorMessage(code, hint) {
     var base = ERROR_MESSAGES[code] || ERROR_MESSAGES.API_ERROR;
+    if (ERROR_CODES_NO_SERVER_HINT[code]) {
+      return base;
+    }
     var hintStr = '';
     if (hint != null && hint !== '') {
       if (typeof hint === 'string') hintStr = hint.trim();

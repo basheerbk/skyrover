@@ -224,10 +224,9 @@ function postJsonHttps(urlString, bodyObj, extraHeaders) {
 app.post('/api/ai/chat', async (req, res) => {
   try {
     if (!SARVAM_API_KEY) {
+      console.warn('[api/ai/chat] Sarvam not configured (set SARVAM_API_KEY on the server)');
       return res.status(503).json({
         error: 'SERVER_CONFIG',
-        hint:
-          'Set SARVAM_API_KEY in the server environment, restart the backend, then try again.',
       });
     }
     const body = req.body && typeof req.body === 'object' ? req.body : {};
@@ -315,7 +314,6 @@ app.post('/api/ai/chat', async (req, res) => {
       console.error('[api/ai/chat] Sarvam HTTP', status, msg);
       return res.status(502).json({
         error: 'API_ERROR',
-        hint: msg,
       });
     }
     let text = '';
@@ -327,9 +325,9 @@ app.post('/api/ai/chat', async (req, res) => {
     if (!text.trim()) {
       const reason =
         (data && data.choices && data.choices[0] && data.choices[0].finish_reason) || null;
+      console.error('[api/ai/chat] Empty or short model response', reason || '');
       return res.status(502).json({
         error: 'API_ERROR',
-        hint: reason ? 'Model finished: ' + reason : 'Empty response from model',
       });
     }
     return res.json({ text: text.trim() });
@@ -337,7 +335,6 @@ app.post('/api/ai/chat', async (req, res) => {
     console.error('[api/ai/chat]', e);
     return res.status(500).json({
       error: 'NETWORK',
-      hint: e && e.message ? String(e.message) : 'Unknown error',
     });
   }
 });

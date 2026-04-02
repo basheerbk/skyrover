@@ -22,7 +22,7 @@
     NETWORK_MESSAGE: 'Could not reach the assistant. Check your connection.',
     API_ERROR_MESSAGE: 'The assistant returned an error. Please try again.',
     SERVER_CONFIG_MESSAGE:
-      'AI is not configured. Set SARVAM_API_KEY when starting the Node backend, then restart the server. Optional: SARVAM_MODEL and SARVAM_BASE_URL.',
+      'The AI mentor is not available on this site right now. Please try again later.',
     BAD_JSON_MESSAGE: 'The request could not be read. Try again or update BlockIDE.',
     EMPTY_MESSAGES_MESSAGE: 'Nothing to send. Type a message and try again.',
     SERVICE_UNAVAILABLE_MESSAGE: 'The assistant service is temporarily busy. Please try again in a moment.',
