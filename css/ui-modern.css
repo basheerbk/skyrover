@@ -1,0 +1,32 @@
+:root {
+  --ui-accent: #4e7cff;
+  --ui-chip-bg: #eef3ff;
+  --ui-chip-text: #1d2f6f;
+  --ui-muted: #6b7280;
+  --ui-radius-sm: 10px;
+  --ui-space-1: 4px;
+  --ui-space-2: 8px;
+}
+
+.react-status-island {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ui-space-1);
+  font-size: 11px;
+  color: var(--ui-muted);
+  margin: 4px 8px 0 8px;
+  white-space: nowrap;
+}
+
+.react-status-island .chip {
+  background: var(--ui-chip-bg);
+  color: var(--ui-chip-text);
+  border-radius: var(--ui-radius-sm);
+  padding: 1px var(--ui-space-2);
+  font-weight: 600;
+}
+
+.react-status-island .dot-sep {
+  opacity: 0.6;
+}
+

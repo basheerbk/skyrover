@@ -1,0 +1,9 @@
+#boardsModal .boards-grid {
+  --board-card-gap: 24px;
+  gap: var(--board-card-gap);
+}
+
+#boardsModal .board-card .board-label {
+  font-weight: 600;
+}
+

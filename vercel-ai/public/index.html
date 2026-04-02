@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>BlockIDE AI proxy</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 640px; margin: 48px auto; padding: 0 20px; line-height: 1.5; color: #222; }
+    code { background: #f4f4f4; padding: 2px 8px; border-radius: 4px; }
+    h1 { font-size: 1.25rem; }
+  </style>
+</head>
+<body>
+  <h1>BlockIDE AI proxy</h1>
+  <p>This host is an API only. There is no web app at the root.</p>
+  <p><strong>Endpoint:</strong> <code>POST /api/chat</code></p>
+  <p>Full URL: <code id="base"></code><code>/api/chat</code></p>
+  <p>Configure that URL plus your Bearer token in BlockIDE → Global configuration → AI server.</p>
+  <script>document.getElementById('base').textContent = location.origin;</script>
+</body>
+</html>

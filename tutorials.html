@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tutorials - Electronics DIY</title>
+  <link rel="stylesheet" href="css/poppins-local.css" />
+  <style>
+    :root {
+      --brand: #8b1fa9;
+      --panel: #f3f4f6;
+      --border: #d1d5db;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Poppins", "Segoe UI", Arial, sans-serif;
+      background: var(--panel);
+    }
+    .topbar {
+      background: var(--brand);
+      color: #fff;
+      padding: 10px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .title {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 700;
+    }
+    .home-btn {
+      color: #fff;
+      text-decoration: none;
+      border: 1px solid rgba(255, 255, 255, 0.45);
+      border-radius: 8px;
+      padding: 6px 10px;
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .home-btn:hover {
+      background: rgba(255, 255, 255, 0.12);
+    }
+    .frame-wrap {
+      height: calc(100vh - 54px);
+      width: 100%;
+      border-top: 1px solid var(--border);
+      background: #fff;
+    }
+    iframe {
+      width: 100%;
+      height: 100%;
+      border: 0;
+      background: #fff;
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <h1 class="title">Tutorials</h1>
+    <a class="home-btn" href="index.html">Home</a>
+  </header>
+  <div class="frame-wrap">
+    <iframe
+      src="https://electronicsdiy.com/"
+      title="Electronics DIY Tutorials"
+      loading="eager"
+      referrerpolicy="no-referrer-when-downgrade"></iframe>
+  </div>
+</body>
+</html>

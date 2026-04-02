@@ -1,0 +1,18 @@
+[Unit]
+Description=Skyrover Block IDE backend
+After=network.target
+
+[Service]
+Type=simple
+User=opc
+Group=opc
+WorkingDirectory=/opt/skyrover/app
+Environment=NODE_ENV=production
+Environment=HOST=127.0.0.1
+Environment=PORT=5005
+ExecStart=/usr/bin/node backend/server.js
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

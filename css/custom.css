@@ -1,0 +1,1944 @@
+/* Custom styles for dropdowns */
+/* Header above #sidePreview: both used z-index 1001; sidePreview is later in DOM so it covered BASIC/AI dropdowns */
+#header {
+  position: relative;
+  z-index: 1002;
+}
+/* Dropdown menu above header chrome; stay below Bootstrap modal (.modal 1050 / backdrop 1040) */
+#sideSerialControls .dropdown-menu,
+.mode-dropdown-menu {
+  z-index: 1003 !important;
+}
+/* Wordmark link: keyboard focus ring */
+#logo_Titre a.header-logo-link {
+  outline: none !important;
+}
+#logo_Titre a.header-logo-link:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.85) !important;
+  outline-offset: 3px !important;
+  border-radius: 4px !important;
+}
+
+select {
+  background-color: #990099 !important;
+  color: white !important;
+  border: 1px solid #990099 !important;
+  padding: 5px 10px !important;
+  border-radius: 4px !important;
+}
+
+select:hover {
+  background-color: #b300b3 !important;
+}
+
+select:focus {
+  outline: none !important;
+  box-shadow: 0 0 5px #990099 !important;
+}
+
+select option {
+  background-color: white !important;
+  color: #990099 !important;
+}
+
+select option:hover {
+  background-color: #f0f0f0 !important;
+}
+
+/* Style for the dropdown arrow */
+select {
+  -webkit-appearance: none !important;
+  -moz-appearance: none !important;
+  appearance: none !important;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='white'%3e%3cpath d='M7 10l5 5 5-5z'/%3e%3c/svg%3e") !important;
+  background-repeat: no-repeat !important;
+  background-position: right 10px center !important;
+  background-size: 20px !important;
+  padding-right: 30px !important;
+}
+
+/* Hide the Blockly workspace grid for a plain background */
+.blocklyMainBackground {
+  fill: #fff !important;
+  fill-opacity: 1 !important;
+}
+
+.blocklyGridPattern {
+  display: none !important;
+}
+
+#mainContent {
+  position: absolute;
+  top: var(--header-height, 56px);
+  /* align with measured header (see header_modern_runtime.js / header-rebuild.css) */
+  left: 0;
+  bottom: 0;
+  width: 75vw;
+  /* 75% of the viewport width */
+  height: calc(100vh - var(--header-height, 56px));
+  overflow: auto;
+  /* Rounding the main workspace "sheet" */
+  border-top-right-radius: 16px;
+  border-bottom-right-radius: 16px;
+  background-color: #fff;
+  /* Ensure opaque background */
+  box-shadow: 2px 0 10px rgba(153, 0, 153, 0.1);
+  /* Subtle purple-ish shadow */
+  /* Note: overflow:hidden might clip scrollbars, using auto with rounding usually warrants custom scrollbar styling or careful padding. 
+     For now, we keep overflow:auto but be aware that scrollbars might cut the corner visually on Windows. */
+}
+
+#sidePreview,
+#serialMonitor,
+.serial-controls,
+.serial-monitor,
+.serial-monitor-row,
+.serial-status-msg,
+.serial-output {
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+.serial-controls {
+  gap: 10px;
+}
+
+.serial-monitor {
+  margin-top: 10px !important;
+}
+
+.serial-status-msg {
+  margin-bottom: 4px !important;
+}
+
+/* Match serial output width to code preview */
+.serial-output {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  height: auto;
+  min-height: 120px;
+  max-height: 25vh;
+  overflow: auto;
+  background: #ffffff;
+  color: #000000;
+  padding: 8px;
+  margin-top: 8px !important;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+  box-sizing: border-box;
+  font-family: monospace;
+  font-size: 0.9em;
+  line-height: 1.4;
+}
+
+/* Responsive adjustments for serial output */
+@media (max-width: 1400px) {
+  .serial-output {
+    max-height: 22vh;
+    font-size: 0.88em;
+  }
+}
+
+@media (max-width: 1200px) {
+  .serial-output {
+    max-height: 20vh;
+    font-size: 0.85em;
+  }
+}
+
+@media (max-width: 800px) {
+  .serial-output {
+    max-height: 18vh;
+    min-height: 100px;
+    font-size: 0.8em;
+    padding: 6px;
+  }
+}
+
+@media (max-width: 600px) {
+  .serial-output {
+    max-height: 15vh;
+    min-height: 80px;
+    font-size: 0.75em;
+    padding: 4px;
+  }
+}
+
+#sidePreview {
+  position: absolute;
+  top: var(--header-height, 56px);
+  right: 0;
+  bottom: 0;
+  width: 25vw;
+  /* 25% of the viewport width */
+  height: calc(100vh - var(--header-height, 56px));
+  background: #ffffff;
+  box-shadow: -2px 0 8px rgba(153, 0, 153, 0.08);
+  z-index: 1001;
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  overflow: hidden;
+}
+
+#pre_previewArduino {
+  flex: 1 1 auto;
+  width: 100%;
+  height: 80%;
+  margin: 0;
+  padding: 1em;
+  font-size: 1.1em;
+  background: #e5e5e5;
+  color: #6e6e6e;
+  overflow: auto;
+  border: none;
+  position: relative;
+}
+
+#btn_CopyCode {
+  flex: 0 0 auto;
+  margin: 1em;
+  /* Inside #sidePreview, which is already placed below the header */
+  top: 8px;
+  align-self: flex-end;
+  background: #fdfdfd !important;
+  color: #990099 !important;
+  border: 1px solid hsl(0, 0%, 100%) !important;
+  box-shadow: none !important;
+  font-weight: 600;
+  border-radius: 8px;
+  transition: background 0.2s, color 0.2s;
+}
+
+#btn_CopyCode:hover,
+#btn_CopyCode:focus {
+  background: #7c007e !important;
+  color: #ffffff !important;
+  border-color: #790071 !important;
+  outline: none !important;
+}
+
+#content_blocks {
+  position: relative;
+}
+
+#tools_blocks {
+  position: absolute;
+  top: calc(var(--header-height, 56px) + 2px);
+  right: 25vw;
+  z-index: 1000;
+  background: rgba(255, 255, 255, 0.85);
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  padding: 6px 8px;
+  display: flex;
+  gap: 8px;
+}
+
+#tools_blocks .btn {
+  margin: 0;
+  box-shadow: none;
+  border-radius: 8px;
+}
+
+.serial-dropdown {
+  all: unset;
+}
+
+#sideSerialControls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: none;
+  margin-bottom: 6px;
+  padding: 6px 10px;
+  position: absolute;
+  top: 3px;
+  right: 15px;
+  z-index: 1001;
+}
+
+/* Optimize header controls for HD screens */
+@media (max-width: 1400px) {
+  #sideSerialControls {
+    gap: 8px;
+    padding: 4px 8px;
+  }
+  
+  #sideSerialControls select,
+  #sideSerialControls button {
+    height: 26px;
+    font-size: 0.9em;
+    padding: 2px 8px !important;
+  }
+}
+
+#sideSerialControls select,
+#sideSerialControls button:not(.mode-dropdown-toggle) {
+  height: 28px;
+  min-width: 60px !important;
+  padding: 1px !important;
+  border-radius: 6px !important;
+  font-size: 1em;
+  font-weight: normal !important;
+  color: #990099 !important;
+  background: #fff !important;
+  border: 2px solid #990099 !important;
+  box-sizing: border-box;
+  outline: none;
+  margin: 0;
+  box-shadow: none;
+  border-radius: 8px;
+  transition: background 0.2s, color 0.2s, border 0.2s !important;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: center;
+}
+
+#sideSerialControls select:focus,
+#sideSerialControls select:hover,
+#sideSerialControls button:hover:not(.mode-dropdown-toggle):not(#btn_boards_modal) {
+  background: #990099 !important;
+  color: #fff !important;
+  border: 1px solid #990099 !important;
+}
+
+#baudRateSelect,
+#serialExpandBaudRate {
+  border: .5px solid #990099 !important;
+  margin-top: 1px;
+  border-radius: 6px;
+  color: #990099;
+  height: 24px;
+  padding: 0 14px;
+  font-size: 1.1em;
+  font-weight: bold;
+  box-sizing: border-box;
+}
+
+
+#baudRateSelect:focus,
+#baudRateSelect:hover {
+  background: #990099;
+  color: #fff;
+  border: 1px solid #990099 !important;
+}
+
+/* Refined Serial Monitor UI */
+
+.serial-btn-connect {
+  background: #fff !important;
+  color: #333 !important;
+  /* Darker text */
+  border: 1px solid #ddd !important;
+  font-weight: 600 !important;
+  border-radius: 4px !important;
+  padding: 0 12px;
+  height: 32px !important;
+  font-size: 0.9em !important;
+  transition: all 0.2s ease !important;
+}
+
+.serial-btn-connect:hover {
+  background: #fff !important;
+  color: #990099 !important;
+  border-color: #990099 !important;
+  box-shadow: 0 2px 4px rgba(153, 0, 153, 0.1);
+}
+
+/* Kid-friendly state colors: green = ready/on, red = stop/off */
+.serial-btn-connect.serial-on {
+  background: #16a34a !important;
+  border-color: #16a34a !important;
+  color: #fff !important;
+}
+
+.serial-btn-connect.serial-on:hover {
+  background: #15803d !important;
+  border-color: #15803d !important;
+  color: #fff !important;
+  box-shadow: 0 2px 6px rgba(22, 163, 74, 0.35);
+}
+
+.serial-btn-connect.serial-off {
+  background: #dc2626 !important;
+  border-color: #dc2626 !important;
+  color: #fff !important;
+}
+
+.serial-btn-connect.serial-off:hover {
+  background: #b91c1c !important;
+  border-color: #b91c1c !important;
+  color: #fff !important;
+  box-shadow: 0 2px 6px rgba(220, 38, 38, 0.35);
+}
+
+.serial-baudrate {
+  width: 80px;
+  color: #333 !important;
+  /* Darker text */
+  border: 1px solid #ddd !important;
+  background: #fff !important;
+  font-weight: 600 !important;
+  /* Match button weight */
+  border-radius: 4px !important;
+  height: 32px !important;
+  padding: 0 5px !important;
+  font-size: 0.9em !important;
+}
+
+.serial-baudrate:hover,
+.serial-baudrate:focus {
+  border-color: #990099 !important;
+  color: #333 !important;
+}
+
+/* Input Group Style for Bottom Row */
+.serial-input {
+  flex: 1;
+  height: 32px;
+  border: 1px solid #ddd;
+  background: #fff;
+  color: #333;
+  padding: 0 12px;
+  border-radius: 20px 0 0 20px;
+  /* Rounded left */
+  border-right: none;
+  transition: border-color 0.2s;
+  font-size: 0.95em;
+  margin: 0;
+  /* Enforce no margin */
+}
+
+.serial-input:focus {
+  border-color: #990099;
+  outline: none;
+  border-right: 1px solid #990099;
+  /* Add border on focus */
+}
+
+.serial-btn-send {
+  width: 40px;
+  height: 32px;
+  background: #990099 !important;
+  color: #fff !important;
+  border: 1px solid #990099 !important;
+  border-radius: 0 20px 20px 0 !important;
+  /* Rounded right */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.2s !important;
+  margin: 0;
+  /* Enforce no margin */
+}
+
+.serial-btn-send:hover {
+  background: #800080 !important;
+}
+
+
+.serial-monitor-row {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  /* Increased gap between rows */
+  margin-bottom: 10px;
+  width: 100%;
+  padding: 15px 10px;
+  /* Increased top/bottom padding */
+}
+
+.serial-monitor-top {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* Center aligned */
+  width: 100%;
+  gap: 12px;
+}
+
+.serial-monitor-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  gap: 0;
+  /* Force zero gap */
+}
+
+/* Fix for Expand Button */
+#serialExpandBtn {
+  background: #fff !important;
+  border: 1px solid #ddd !important;
+  color: #666 !important;
+  border-radius: 4px !important;
+  width: 32px;
+  height: 32px;
+  margin-left: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease !important;
+}
+
+#serialExpandBtn:hover {
+  color: #990099 !important;
+  border-color: #990099 !important;
+  background: #fff !important;
+}
+
+/* Clear serial output button */
+#clearSerialBtn {
+  border-radius: 4px !important;
+  width: 32px;
+  height: 32px;
+  background: #fff !important;
+  border: 1px solid #ddd !important;
+  color: #666 !important;
+  transition: all 0.2s ease !important;
+}
+
+#clearSerialBtn:hover {
+  background: #fff1f2 !important;
+  border-color: #dc2626 !important;
+  color: #dc2626 !important;
+}
+
+
+#serialExpandModal .modal-dialog {
+  width: 700px;
+  max-width: 90vw;
+  height: 500px;
+  max-height: 90vh;
+  margin: 30px auto;
+}
+
+#serialExpandModal .modal-content {
+  height: 100%;
+}
+
+@media (max-width: 800px) {
+  #serialExpandModal .modal-dialog {
+    width: 98vw;
+    height: 90vh;
+    margin: 10px auto;
+  }
+}
+
+#serialExpandOutput {
+  width: 100%;
+  height: 340px;
+  min-height: 200px;
+  max-height: 60vh;
+  overflow: auto;
+  background: #f7f5f5;
+  color: #000;
+  padding: 6px 4px !important;
+  border-radius: 4px;
+  box-sizing: border-box;
+  margin: 0;
+}
+
+@media (max-width: 800px) {
+  #serialExpandOutput {
+    height: 30vh;
+    max-height: 40vh;
+  }
+}
+
+#sideSerialControls select,
+#sideSerialControls button {
+  font-size: 0.95em;
+  padding: 1px 1px;
+  border: none;
+  border-radius: 6px;
+  background: white;
+  color: #8e24aa;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+/* === Moved from inline <style> in index.html === */
+
+#serial-controls {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: #8e24aa;
+  padding: 12px 24px;
+  border-radius: 8px;
+}
+
+#serial-controls select,
+#serial-controls button {
+  font-size: 0.95em;
+  padding: 4px 10px;
+  border: none;
+  border-radius: 6px;
+  background: white;
+  color: #8e24aa;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+#serial-controls button {
+  background: #9c27b0;
+  color: white;
+  transition: background 0.2s;
+}
+
+#serial-controls button:hover {
+  background: #7b1fa2;
+}
+
+#sideSerialControls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: none;
+  margin-bottom: 6px;
+}
+
+#sideSerialControls select,
+#sideSerialControls button {
+  font-size: 0.95em;
+  padding: 4px 10px;
+  border: none;
+  border-radius: 6px;
+  background: white;
+  color: #8e24aa;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+#sideSerialControls button {
+  background: #fff;
+  color: #990099;
+  border: 2px solid #990099;
+  font-weight: bold;
+  transition: background 0.2s, color 0.2s, border 0.2s;
+}
+
+#sideSerialControls button:hover {
+  background: #990099;
+  color: #fff;
+  border: 2px solid #990099;
+}
+
+#sideSerialControls select {
+  color: #990099 !important;
+  border: 2px solid #990099 !important;
+  background: #fff !important;
+  font-weight: bold !important;
+  transition: background 0.2s, color 0.2s, border 0.2s !important;
+}
+
+#sideSerialControls select:hover,
+#sideSerialControls select:focus {
+  background: #990099 !important;
+  color: #fff !important;
+  border: 2px solid #990099 !important;
+}
+
+#sideExpandModal .modal-dialog {
+  max-width: 90vw;
+}
+
+#sideExpandModal .modal-body {
+  height: 60vh;
+  overflow: auto;
+  padding-top: 48px;
+}
+
+#sideExpandOutput {
+  width: 100%;
+  min-height: 400px;
+  max-height: 55vh;
+  font-size: 1.2em;
+  background: #f7f5f5;
+  color: #000;
+  border-radius: 4px;
+  padding: 12px;
+  box-sizing: border-box;
+}
+
+/* === End moved inline CSS === */
+
+/* Serial Tabs */
+.serial-tabs {
+  display: flex;
+  gap: 2px;
+  background: #f0f0f0;
+  padding: 4px 4px 0;
+  border-radius: 4px 4px 0 0;
+  margin-bottom: 0 !important;
+  flex-shrink: 0;
+}
+
+.serial-tab-btn {
+  padding: 8px 16px;
+  border: none;
+  background: #e0e0e0;
+  color: #666;
+  font-weight: bold;
+  cursor: pointer;
+  border-radius: 8px 8px 0 0;
+  transition: all 0.2s ease;
+  flex: 1;
+  text-align: center;
+}
+
+.serial-tab-btn:hover {
+  background: #ffffff;
+  color: #1d1d1d;
+}
+
+
+.serial-monitor {
+  background: white;
+  border: 1px solid #ddd;
+  /* Keep side/bottom borders */
+  border-top: 6px solid #f0f0f0;
+  /* Thicker top border matching tab bg to fake a gap */
+  padding: 20px 15px 15px 15px;
+  /* Aggressive top padding */
+  margin-top: 0;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  box-sizing: border-box;
+}
+
+/* Ensure content has space from top */
+.serial-monitor-row {
+  margin-top: 0;
+  /* Let container padding handle it */
+  gap: 15px;
+}
+
+
+.serial-monitor-top {
+  margin-top: 5px;
+  /* Extra nudge */
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  gap: 20px !important;
+  /* Forces 20px space between horizontal buttons */
+  width: 100%;
+}
+
+.serial-tab-btn.active {
+  background: #990099;
+  color: white;
+  border-radius: 8px 8px 0 0;
+}
+
+/* Responsive tab buttons */
+@media (max-width: 600px) {
+  .serial-tab-btn {
+    padding: 6px 12px;
+    font-size: 0.85em;
+  }
+}
+
+.messages-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background: #ffffff;
+  border-bottom: 0px solid #ffffff;
+}
+
+.messages-header h4 {
+  margin: 0;
+  color: #333;
+  font-size: 1em;
+}
+
+#clearMessages {
+  padding: 2px 8px;
+  font-size: 0.9em;
+  background: #f0f0f0;
+  border: 0px solid #ddd;
+  border-radius: 3px;
+  color: #666;
+}
+
+#clearMessages:hover {
+  background: #e0e0e0;
+  color: #333;
+}
+
+/* Ensure serial monitor and messages monitor have consistent styling */
+#serialMonitor,
+#messagesMonitor {
+  border: none;
+  border-radius: 0 0 4px 4px;
+  margin-top: -1px;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+/* Message types in the messages monitor */
+.message {
+  padding: 4px 8px;
+  margin: 2px 0;
+  border-radius: 3px;
+  font-family: monospace;
+  font-size: 0.9em;
+  white-space: pre-wrap;
+  /* Fix for background color clipping */
+  word-break: break-word;
+  /* Ensure clear wrapping */
+}
+
+.message.info {
+  color: #0066cc;
+  background: #e6f3ff;
+}
+
+.message.success {
+  color: #008800;
+  background: #e6ffe6;
+}
+
+.message.warning {
+  color: #cc6600;
+  background: #fff3e6;
+}
+
+.message.error {
+  color: #cc0000;
+  background: #ffe6e6;
+}
+
+/* Serial output area */
+#serialOutput {
+  background: #ffffff;
+  border: 1px solid #ababab;
+  color: #000000;
+  font-family: monospace;
+  font-size: 0.9em;
+  padding: 8px;
+  border-radius: 4px;
+  height: auto;
+  min-height: 100px;
+  max-height: 25vh;
+  overflow-y: auto;
+  line-height: 1.4;
+}
+
+/* Messages output area */
+#messagesOutput {
+  background: #ffffff;
+  border: 0px solid #e0e0e0;
+  color: #000000;
+  font-family: monospace;
+  font-size: 0.9em;
+  border-radius: 4px;
+  height: auto;
+  min-height: 100px;
+  max-height: 25vh;
+  overflow-y: auto;
+  margin: 0 !important;
+  padding: 8px;
+  line-height: 1.4;
+}
+
+/* Responsive adjustments for both outputs */
+@media (max-width: 1400px) {
+  #serialOutput,
+  #messagesOutput {
+    max-height: 22vh;
+    font-size: 0.88em;
+  }
+}
+
+@media (max-width: 1200px) {
+
+  #serialOutput,
+  #messagesOutput {
+    max-height: 20vh;
+    font-size: 0.85em;
+  }
+}
+
+@media (max-width: 800px) {
+
+  #serialOutput,
+  #messagesOutput {
+    max-height: 18vh;
+    min-height: 100px;
+    font-size: 0.8em;
+    padding: 6px;
+  }
+}
+
+@media (max-width: 600px) {
+
+  #serialOutput,
+  #messagesOutput {
+    max-height: 15vh;
+    min-height: 80px;
+    font-size: 0.75em;
+    padding: 4px;
+  }
+}
+
+#messagesMonitor.serial-monitor {
+  min-height: 0 !important;
+  height: auto !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  background: transparent !important;
+  border: none !important;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Ensure both monitors have consistent responsive behavior */
+#serialMonitor,
+#messagesMonitor {
+  border: none;
+  border-radius: 0 0 4px 4px;
+  margin-top: -1px;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+/* Make the output areas flexible within their containers */
+#serialMonitor .serial-output,
+#messagesMonitor .serial-output {
+  flex: 1;
+  min-height: 120px;
+  max-height: none;
+}
+
+/* Responsive adjustments for the side preview panel */
+/* HD screens (1366x768) - optimize for smaller desktop displays */
+@media (max-width: 1400px) {
+  #sidePreview {
+    width: 28vw;
+  }
+
+  #mainContent {
+    width: 72vw;
+  }
+
+  /* Slightly reduce font sizes for better fit */
+  #pre_previewArduino {
+    font-size: 1em;
+  }
+
+  .blocklyTreeLabel {
+    font-size: 14px !important;
+  }
+
+  /* Optimize serial controls for smaller screens */
+  #sideSerialControls button,
+  #sideSerialControls select {
+    font-size: 0.9em;
+    padding: 2px 8px !important;
+  }
+}
+
+@media (max-width: 1200px) {
+  #sidePreview {
+    width: 30vw;
+  }
+
+  #mainContent {
+    width: 70vw;
+  }
+}
+
+@media (max-width: 800px) {
+  #sidePreview {
+    width: 35vw;
+  }
+
+  #mainContent {
+    width: 65vw;
+  }
+}
+
+@media (max-width: 600px) {
+  #sidePreview {
+    width: 40vw;
+  }
+
+  #mainContent {
+    width: 60vw;
+  }
+}
+
+/* Ensure the serial monitor row doesn't interfere with responsive output */
+.serial-monitor-row {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  justify-content: flex-start;
+  flex-shrink: 0;
+  margin-bottom: 8px;
+}
+
+.serial-monitor-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.serial-monitor-bottom {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  justify-content: center;
+  width: 100%;
+}
+
+/* Responsive controls */
+@media (max-width: 600px) {
+  .serial-monitor-top {
+    gap: 4px;
+  }
+
+  .serial-monitor-bottom {
+    gap: 4px;
+  }
+
+  .serial-btn-connect,
+  .serial-baudrate,
+  .serial-btn-send {
+    font-size: 0.8em;
+    padding: 4px 8px;
+  }
+
+  .serial-input {
+    font-size: 0.8em;
+    padding: 4px 6px;
+  }
+}
+
+#previewExpandBtn {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid #990099;
+  border-radius: 6px;
+  color: #990099;
+  font-size: 1.1em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border 0.15s;
+}
+
+#previewExpandBtn:hover,
+#previewExpandBtn:focus {
+  background: #f3e6fa;
+  color: #7c007e;
+  border: 1.5px solid #7c007e;
+  outline: none;
+}
+
+#pre_previewArduino {
+  position: relative;
+}
+
+#previewExpandBtn {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid #990099;
+  border-radius: 6px;
+  color: #990099;
+  font-size: 1.1em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border 0.15s;
+}
+
+#previewExpandBtn:hover,
+#previewExpandBtn:focus {
+  background: #f3e6fa;
+  color: #7c007e;
+  border: 1.5px solid #7c007e;
+  outline: none;
+}
+
+.arduino-preview-container {
+  position: relative;
+  width: 100%;
+  max-width: 100%;
+  min-width: 180px;
+  margin: 0 auto;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  height: 55vh;
+  max-height: 600px;
+  min-height: 320px;
+  transition: height 0.2s;
+  flex-shrink: 0;
+}
+
+#pre_previewArduino {
+  width: 100%;
+  height: 100%;
+  min-height: 280px;
+  max-height: 100%;
+  margin: 0;
+  padding: 1em;
+  font-size: 1em;
+  background: #e5e5e5;
+  color: #6e6e6e;
+  overflow: auto;
+  border: none;
+  border-radius: 8px;
+  box-sizing: border-box;
+  line-height: 1.4;
+}
+
+/* Responsive adjustments for arduino preview */
+@media (max-width: 1400px) {
+  .arduino-preview-container {
+    height: 52vh;
+    max-height: 500px;
+    min-height: 260px;
+  }
+
+  #pre_previewArduino {
+    font-size: 0.95em;
+    padding: 0.85em;
+    min-height: 240px;
+  }
+}
+
+@media (max-width: 1200px) {
+  .arduino-preview-container {
+    height: 50vh;
+    max-height: 550px;
+    min-height: 280px;
+  }
+
+  #pre_previewArduino {
+    font-size: 0.95em;
+    padding: 0.8em;
+    min-height: 250px;
+  }
+}
+
+@media (max-width: 800px) {
+  .arduino-preview-container {
+    height: 45vh;
+    max-height: 500px;
+    min-height: 250px;
+  }
+
+  #pre_previewArduino {
+    font-size: 0.9em;
+    padding: 0.6em;
+    min-height: 220px;
+  }
+}
+
+@media (max-width: 600px) {
+  .arduino-preview-container {
+    height: 42vh;
+    max-height: 450px;
+    min-height: 230px;
+  }
+
+  #pre_previewArduino {
+    font-size: 0.85em;
+    padding: 0.5em;
+    min-height: 200px;
+  }
+}
+
+.hidden-section {
+  display: none !important;
+}
+
+/* Ensure the serial tabs and monitors take remaining space */
+/* Make the active monitor take remaining space */
+#serialMonitor.active,
+#messagesMonitor.active {
+  display: flex !important;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* Hide inactive monitors */
+#serialMonitor:not(.active),
+#messagesMonitor:not(.active) {
+  display: none !important;
+}
+
+#sideSerialControls #side_board_name {
+  width: 70px;
+  min-width: 0;
+  max-width: 100px;
+  padding: 0 8px;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+  height: 28px;
+  border-radius: 6px !important;
+  font-size: 1em;
+  font-weight: bold;
+  color: #990099 !important;
+  background: #fff !important;
+  border: 2px solid #990099 !important;
+  box-sizing: border-box;
+  outline: none;
+  margin: 0;
+  box-shadow: none;
+  transition: background 0.2s, color 0.2s, border 0.2s !important;
+  text-align: center;
+}
+
+/* Remove hover/focus for board name */
+#sideSerialControls #side_board_name:focus,
+#sideSerialControls #side_board_name:hover {
+  background: #fff !important;
+  color: #990099 !important;
+  border: 2px solid #990099 !important;
+}
+
+#btn_boards_modal {
+  height: 28px;
+  min-width: 70px;
+  padding: 0 16px;
+  border-radius: 6px !important;
+  font-size: 1em;
+  font-weight: 600 !important;
+  color: #990099 !important;
+  background: #fff !important;
+  border: 2px solid #990099 !important;
+  box-sizing: border-box;
+  outline: none;
+  margin: 0;
+  box-shadow: none;
+  transition: background 0.2s, color 0.2s, border 0.2s !important;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+#btn_boards_modal:hover,
+#btn_boards_modal:focus {
+  background: #990099 !important;
+  color: #fff !important;
+  border: .5px solid #ffffff !important;
+}
+
+nav a:hover {
+  background: #990099 !important;
+  color: #fff !important;
+}
+
+#boardsModal .modal-dialog {
+  width: 900px;
+  max-width: 98vw;
+  min-width: 600px;
+  max-height: 98vh;
+  margin: 30px auto;
+}
+
+#boardsModal .modal-content {
+  display: flex;
+  flex-direction: column;
+  max-height: 98vh;
+}
+
+#boardsModal .modal-body {
+  flex-grow: 1;
+  overflow-y: auto;
+}
+
+@media (max-width: 1000px) {
+  #boardsModal .modal-dialog {
+    width: 98vw;
+    min-width: 0;
+    height: 90vh;
+    margin: 10px auto;
+  }
+
+  #boardsModal .modal-content {
+    min-height: 0;
+    height: 100%;
+    max-height: 90vh;
+  }
+}
+
+nav a i[class*="caret"] {
+  color: #fff !important;
+  /* or any color you want */
+}
+
+#btn_left_bottom {
+  position: fixed;
+  left: 15px !important;
+  bottom: 15px !important;
+  background-color: #990099 !important;
+  color: white !important;
+  border: 1px solid #990099 !important;
+  border-radius: 4px !important;
+  padding: 5px 10px !important;
+  font-size: 1em !important;
+  height: 28px !important;
+  width: 130px !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  font-family: 'Poppins', 'Segoe UI', Arial, sans-serif;
+  z-index: 10 !important;
+  white-space: nowrap;
+}
+
+#btn_left_bottom:hover,
+#btn_left_bottom:focus {
+  background-color: #b300b3 !important;
+  color: white !important;
+  border: 1px solid #990099 !important;
+}
+
+.boards-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+  padding: 16px 0;
+  justify-items: center;
+}
+
+.board-card {
+  background: #f8faff;
+  border: 2px solid #e0e6f0;
+  border-radius: 16px;
+  box-shadow: 0 2px 8px rgba(153, 0, 153, 0.05);
+  padding: 16px 8px 8px 8px;
+  text-align: center;
+  width: 160px;
+  transition: border 0.2s, box-shadow 0.2s;
+  cursor: pointer;
+}
+
+.board-card.selected,
+.board-card:hover {
+  border: 2px solid #4e7cff;
+  box-shadow: 0 4px 16px rgba(78, 124, 255, 0.12);
+}
+
+.board-card img {
+  width: 80px;
+  height: 80px;
+  object-fit: contain;
+  margin-bottom: 8px;
+}
+
+.board-label {
+  font-size: 1.1em;
+  color: #333;
+  margin-top: 4px;
+}
+
+#side_serialport {
+  width: auto !important;
+  padding: 2px 10px !important;
+  font-family: 'Poppins', 'Segoe UI', Arial, sans-serif;
+}
+
+/* Temporarily hide Remote and Run buttons (remove this rule to show them again) */
+#side_btn_remote,
+#side_btn_run {
+  display: none !important;
+}
+
+#side_btn_upload,
+#side_btn_run,
+#side_btn_remote,
+#btn_boards_modal {
+  font-weight: 600 !important;
+}
+
+#sideSerialControls #side_btn_upload,
+#sideSerialControls #side_btn_run,
+#sideSerialControls #side_btn_remote,
+#sideSerialControls #btn_boards_modal,
+#sideSerialControls #side_serialport {
+  font-weight: 600 !important;
+}
+
+/* Fix for Tutorials and About button hover/focus color */
+#btn_menu_tutorials:hover,
+#btn_menu_tutorials:focus,
+#btn_menu_about:hover,
+#btn_menu_about:focus {
+  background: #b300b3 !important;
+  color: #fff !important;
+}
+
+/* Tutorial Modal Styles */
+#tutorialsModal .modal-dialog {
+  width: 800px;
+  max-width: 90vw;
+}
+
+#tutorialsModal .modal-content {
+  border-radius: 8px;
+}
+
+#tutorialsModal .modal-header {
+  background: linear-gradient(135deg, #990099, #b300b3);
+  color: white;
+  border-radius: 8px 8px 0 0;
+}
+
+#tutorialsModal .modal-header h4 {
+  color: white;
+  margin: 0;
+}
+
+#tutorialsModal .modal-header .fa-graduation-cap {
+  margin-right: 10px;
+  font-size: 1.2em;
+}
+
+#tutorialsModal .modal-body {
+  padding: 20px;
+}
+
+#tutorialsModal h5 {
+  color: #990099;
+  font-weight: bold;
+  margin-top: 20px;
+  margin-bottom: 15px;
+  border-bottom: 2px solid #f0f0f0;
+  padding-bottom: 8px;
+}
+
+#tutorialsModal h5:first-child {
+  margin-top: 0;
+}
+
+#tutorialsModal .list-group {
+  margin-bottom: 25px;
+}
+
+#tutorialsModal .list-group-item {
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  margin-bottom: 8px;
+  transition: all 0.2s ease;
+}
+
+#tutorialsModal .list-group-item:hover {
+  border-color: #990099;
+  background-color: #f8f5ff;
+  transform: translateX(5px);
+}
+
+
+#tutorialsModal .tutorial-link {
+  color: #333;
+  text-decoration: none;
+  display: block;
+  padding: 8px 0;
+  transition: color 0.2s ease;
+}
+
+#tutorialsModal .tutorial-link:hover {
+  color: #990099;
+  text-decoration: none;
+}
+
+#tutorialsModal .tutorial-link i {
+  margin-right: 10px;
+  width: 20px;
+  text-align: center;
+  color: #990099;
+}
+
+#tutorialsModal .modal-footer {
+  border-top: 1px solid #e0e0e0;
+  padding: 15px 20px;
+}
+
+#tutorialsModal .btn-primary {
+  background-color: #990099;
+  border-color: #990099;
+}
+
+#tutorialsModal .btn-primary:hover {
+  background-color: #7c007e;
+  border-color: #7c007e;
+}
+
+#tutorialsModal .btn-info {
+  background-color: #5bc0de;
+  border-color: #46b8da;
+  color: white;
+}
+
+#tutorialsModal .btn-info:hover {
+  background-color: #31b0d5;
+  border-color: #269abc;
+  color: white;
+}
+
+/* Responsive adjustments for tutorial modal */
+@media (max-width: 768px) {
+  #tutorialsModal .modal-dialog {
+    width: 95vw;
+    margin: 10px auto;
+  }
+
+  #tutorialsModal .modal-body {
+    padding: 15px;
+  }
+
+  #tutorialsModal h5 {
+    font-size: 1.1em;
+  }
+
+  #tutorialsModal .tutorial-link {
+    font-size: 0.95em;
+  }
+}
+
+/* Modern Config Modal Styles */
+
+/* Modal Container */
+#configModal .modal-dialog {
+  width: 900px !important;
+  max-width: 95vw;
+}
+
+#configModal .modal-content {
+  border-radius: 12px;
+  border: none;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+  overflow: hidden;
+}
+
+#configModal .modal-header {
+  background: #f8f9fa;
+  border-bottom: 1px solid #eee;
+  padding: 15px 20px;
+}
+
+#configModal .modal-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #333;
+}
+
+#configModal .modal-body {
+  padding: 20px;
+  background: #fff;
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+/* Modal Tabs */
+.config-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-bottom: 20px;
+  background: #f1f2f6;
+  padding: 5px;
+  border-radius: 8px;
+}
+
+.config-tab-btn {
+  border: none;
+  background: transparent;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-weight: 600;
+  color: #666;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.95rem;
+}
+
+.config-tab-btn:hover {
+  background: #e4e6eb;
+  color: #333;
+}
+
+.config-tab-btn.active {
+  background: #fff;
+  color: #990099;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+/* Tab Content Areas */
+.config-tab-pane {
+  display: none;
+  animation: fadeIn 0.3s ease;
+}
+
+.config-tab-pane.active {
+  display: block;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Category Grid */
+.category-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 15px;
+}
+
+/* Category Card */
+.category-card {
+  position: relative;
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 15px 10px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 120px;
+}
+
+.category-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+  border-color: #990099;
+}
+
+.category-card.selected {
+  background: #fdf5fd;
+  border-color: #990099;
+  box-shadow: 0 0 0 2px rgba(153, 0, 153, 0.1);
+}
+
+.category-card.selected::after {
+  content: '✓';
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  background: #990099;
+  color: #fff;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.card-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.category-card:hover .card-icon {
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25) !important;
+}
+
+.category-card.selected .card-icon {
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3) !important;
+}
+
+.card-title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #444;
+  line-height: 1.3;
+}
+
+/* Hidden checkboxes */
+.category-card input[type="checkbox"] {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+/* Toolbar */
+.config-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid #eee;
+}
+
+.search-web {
+  width: 250px;
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 20px;
+  outline: none;
+  transition: all 0.2s;
+}
+
+.search-web:focus {
+  border-color: #990099;
+  box-shadow: 0 0 0 3px rgba(153, 0, 153, 0.1);
+}
+
+.card-desc {
+  font-size: 0.8rem;
+  color: #888;
+  margin-top: 5px;
+  line-height: 1.2;
+}
+
+.category-card:hover .card-desc {
+  color: #666;
+}
+
+.category-card.selected .card-desc {
+  color: #990099;
+  opacity: 0.8;
+}
+
+/* === Basic / Advanced Mode Toggle (kids-friendly, clear active state) === */
+#mode-toggle {
+  display: inline-flex !important;
+  align-items: center !important;
+  background: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  padding: 0 !important;
+  gap: 6px !important;
+  flex-shrink: 0 !important;
+  height: 28px !important;
+  box-sizing: border-box !important;
+}
+
+/* Mode: Basic / Advanced — dropdown (matches other header pills) */
+.mode-dropdown-wrap {
+  flex-shrink: 0 !important;
+}
+.mode-dropdown-toggle {
+  background: #fff !important;
+  border: 2px solid #8e24aa !important;
+  border-radius: 12px !important;
+  color: #8e24aa !important;
+  cursor: pointer !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.4px !important;
+  padding: 0 12px 0 14px !important;
+  line-height: 1 !important;
+  height: 28px !important;
+  min-width: 100px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 8px !important;
+  box-sizing: border-box !important;
+  text-transform: uppercase !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12) !important;
+  transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease !important;
+}
+.mode-dropdown-toggle:hover,
+.mode-dropdown-toggle:focus {
+  background: #8e24aa !important;
+  color: #fff !important;
+  border-color: #8e24aa !important;
+}
+.mode-dropdown-toggle .caret {
+  border-top-color: currentColor !important;
+  margin-top: 0 !important;
+}
+.mode-dropdown-menu {
+  min-width: 140px !important;
+  margin-top: 6px !important;
+  border-radius: 10px !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18) !important;
+  border: 1px solid rgba(142, 36, 170, 0.2) !important;
+  padding: 4px 0 !important;
+  font-family: inherit !important;
+}
+.mode-dropdown-menu > li > a {
+  padding: 10px 16px !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  color: #333 !important;
+}
+.mode-dropdown-menu > li.active > a,
+.mode-dropdown-menu > li.active > a:hover,
+.mode-dropdown-menu > li.active > a:focus {
+  background: #f3e5f5 !important;
+  color: #6a1b9a !important;
+}
+.mode-dropdown-menu > li:not(.active) > a:hover {
+  background: #fafafa !important;
+  color: #6a1b9a !important;
+}
+.mode-dropdown-toggle:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.9) !important;
+  outline-offset: 2px !important;
+}
+
+/* === Kids-friendly header bar buttons (pill shape, shadow, hover) === */
+#sideSerialControls select,
+#sideSerialControls button:not(.mode-dropdown-toggle) {
+  border-radius: 12px !important;
+  padding: 2px 14px !important;
+  min-height: 28px !important;
+  height: 28px !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12) !important;
+  transition: background 0.2s ease, color 0.2s ease, border 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease !important;
+}
+
+#sideSerialControls button:hover:not(.mode-dropdown-toggle):not(#btn_ai_assistant),
+#sideSerialControls select:hover,
+#sideSerialControls select:focus {
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.18) !important;
+  transform: scale(1.03) !important;
+}
+
+#sideSerialControls select {
+  color: #8e24aa !important;
+  border: 2px solid #8e24aa !important;
+  background: #fff !important;
+}
+
+#sideSerialControls button:not(.mode-dropdown-toggle):not(#btn_ai_assistant) {
+  color: #8e24aa !important;
+  border: 2px solid #8e24aa !important;
+  background: #fff !important;
+}
+
+#sideSerialControls button:hover:not(.mode-dropdown-toggle):not(#btn_ai_assistant),
+#sideSerialControls select:hover,
+#sideSerialControls select:focus {
+  background: #8e24aa !important;
+  color: #fff !important;
+  border-color: #8e24aa !important;
+}
+
+#sideSerialControls button:focus-visible:not(.mode-dropdown-toggle):not(#btn_ai_assistant),
+#sideSerialControls select:focus {
+  outline: 2px solid #8e24aa !important;
+  outline-offset: 2px !important;
+}
+
+/* AI Assistant button – distinct gradient so it stands out */
+#btn_ai_assistant {
+  background: linear-gradient(135deg, #ab47bc 0%, #7b1fa2 100%) !important;
+  color: #fff !important;
+  border: none !important;
+  box-shadow: 0 2px 8px rgba(123, 31, 162, 0.35) !important;
+}
+
+#btn_ai_assistant:hover {
+  background: linear-gradient(135deg, #ba68c8 0%, #8e24aa 100%) !important;
+  color: #fff !important;
+  box-shadow: 0 4px 12px rgba(123, 31, 162, 0.45) !important;
+  transform: scale(1.03) !important;
+}
+
+#btn_ai_assistant:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.9) !important;
+  outline-offset: 2px !important;
+}
+
+/* === Global Modern Scrollbar === */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #d1d1d1;
+  border-radius: 4px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #990099;
+  border: 0;
+}
+
+/* Blockly workspace (#mainContent): thinner than global 8px */
+#mainContent {
+  scrollbar-width: thin;
+  scrollbar-color: #c8c8c8 transparent;
+}
+
+#mainContent::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+#mainContent::-webkit-scrollbar-thumb {
+  background: #d1d1d1;
+  border-radius: 3px;
+  border: 1px solid transparent;
+  background-clip: content-box;
+}
+
+#mainContent::-webkit-scrollbar-thumb:hover {
+  background: #990099;
+  border: 0;
+}

@@ -1,0 +1,63 @@
+# Python (optional tooling)
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+build/
+develop-eggs/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+venv/
+ENV/
+env/
+
+.idea/
+.vscode/
+.cursor/
+*.swp
+*.swo
+
+.DS_Store
+Thumbs.db
+
+node_modules/
+dist-electron/
+.env
+*.log
+
+build_*_log.txt
+temp_core/
+test_esp32/
+
+sync.ffs_db
+*.ffs_db
+*.ffs_lock
+/nbproject/
+
+*.zip
+
+# Built by CI / webpack locally (do not commit)
+dist/
+
+New folder/
+
+# Server audit log (may contain code if BLOCKIDE_AUDIT_INCLUDE_CODE is set)
+backend/data/
+
+# Deploy SSH keys (never commit)
+deploy/*_rsa
+deploy/*_ed25519
+deploy/*.pem
+deploy/github-actions-deploy
+deploy/github-actions-deploy.pub

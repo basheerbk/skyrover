@@ -1,0 +1,97 @@
+/* Add rounded corners to all major boxes */
+
+/* Main workspace area */
+#mainContent {
+    border-radius: 0 8px 8px 8px !important;
+}
+
+/* Code preview sidebar */
+#sidePreview {
+    border-radius: 8px 0 0 8px !important;
+}
+
+/* Blockly workspace background */
+.blocklyMainBackground {
+    border-radius: 8px;
+}
+
+/* Toolbox sidebar (left panel with Logic, Loops, etc.) */
+.blocklyToolboxDiv {
+    border-radius: 8px 0 0 8px !important;
+    overflow: hidden !important;
+}
+
+/* Flyout background */
+.blocklyFlyoutBackground {
+    border-radius: 8px 0 0 8px !important;
+}
+
+/* Tools panel */
+#tools_blocks {
+    border-radius: 12px !important;
+}
+
+/* Delete button */
+#btn_delete {
+    border-radius: 8px !important;
+}
+
+/* Remove white gaps between elements */
+.injectionDiv,
+.blocklyDiv,
+#content_blocks {
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+}
+
+/* Ensure toolbox has no gaps */
+.blocklyToolboxDiv {
+    margin: 0 !important;
+    padding: 0 !important;
+    border-right: none !important;
+}
+
+/* Remove any borders from workspace */
+.blocklyMainWorkspace {
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+/* Ensure SVG fills completely */
+svg.blocklySvg {
+    display: block !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+/* Serial monitor and messages containers */
+#serialMonitor,
+#messagesMonitor {
+    border-radius: 0 0 8px 8px !important;
+}
+
+/* Any remaining sharp boxes */
+.tab-pane {
+    border-radius: 8px;
+}
+
+.btn {
+    border-radius: 6px !important;
+}
+
+input[type="text"],
+input[type="number"] {
+    border-radius: 6px !important;
+}
+
+textarea {
+    border-radius: 8px !important;
+}
+
+/* Panels and containers */
+.panel,
+.container,
+.box {
+    border-radius: 8px !important;
+}

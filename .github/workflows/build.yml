@@ -1,0 +1,57 @@
+name: Build & Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - run: npm run build:bundle
+
+      - name: Smoke test (assets + static checks)
+        env:
+          SMOKE_SKIP_SERVER: '1'
+        run: npm run smoke:test
+
+      - name: Deploy to Oracle VM
+        env:
+          SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          HOST: ${{ secrets.DEPLOY_HOST }}
+          USER: ${{ secrets.DEPLOY_USER }}
+        run: |
+          set -e
+          test -n "$SSH_KEY" || { echo "Missing secret DEPLOY_SSH_KEY"; exit 1; }
+          test -n "$HOST" || { echo "Missing secret DEPLOY_HOST"; exit 1; }
+          test -n "$USER" || { echo "Missing secret DEPLOY_USER"; exit 1; }
+          echo "$SSH_KEY" > /tmp/deploy_key
+          chmod 600 /tmp/deploy_key
+          rsync -az --delete \
+            --exclude='node_modules/' \
+            --exclude='backend/data/' \
+            --exclude='.git/' \
+            --exclude='New folder/' \
+            -e "ssh -i /tmp/deploy_key -o StrictHostKeyChecking=accept-new" \
+            ./ "$USER@$HOST:/opt/skyrover/app/"
+
+      - name: Install production deps and restart service
+        env:
+          SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          HOST: ${{ secrets.DEPLOY_HOST }}
+          USER: ${{ secrets.DEPLOY_USER }}
+        run: |
+          set -e
+          ssh -i /tmp/deploy_key -o StrictHostKeyChecking=accept-new "$USER@$HOST" \
+            "cd /opt/skyrover/app && npm ci --omit=dev && sudo systemctl restart skyrover && sleep 3 && curl -sf http://127.0.0.1:5005/healthz"

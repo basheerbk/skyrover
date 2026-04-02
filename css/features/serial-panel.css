@@ -1,0 +1,9 @@
+#serialMonitor,
+#messagesMonitor {
+  --serial-radius: 8px;
+}
+
+.serial-monitor .serial-output {
+  border-radius: var(--serial-radius);
+}
+

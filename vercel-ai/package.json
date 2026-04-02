@@ -1,0 +1,12 @@
+{
+  "name": "vercel-ai-proxy",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Sarvam AI proxy for BlockIDE — deploy to Vercel",
+  "scripts": {
+    "vercel-build": "echo ok"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

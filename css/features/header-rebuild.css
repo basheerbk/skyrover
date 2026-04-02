@@ -1,0 +1,295 @@
+:root {
+  --hdr-h: 56px;
+  /* Main/side panel top offset; header_modern_runtime.js may override with measured px */
+  --header-height: var(--hdr-h);
+  --hdr-logo-h: 38px;
+  --hdr-link-h: 34px;
+  --hdr-link-font: 16px;
+  --hdr-control-h: 34px;
+  --hdr-control-font: 13px;
+  --hdr-bg-a: #7a1fa1;
+  --hdr-bg-b: #8e24aa;
+  --hdr-bg-c: #6a1b9a;
+}
+
+/* Rebuilt header: fully scoped, legacy-proof */
+#header.header-modern {
+  position: relative !important;
+  z-index: 1002 !important;
+  height: var(--hdr-h) !important;
+  min-height: var(--hdr-h) !important;
+  max-height: var(--hdr-h) !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border: 0 !important;
+  background: linear-gradient(90deg, var(--hdr-bg-a), var(--hdr-bg-b) 55%, var(--hdr-bg-c)) !important;
+  box-shadow: 0 4px 14px rgba(45, 12, 66, 0.25) !important;
+  /* Dropdowns paint outside the 56px box */
+  overflow: visible !important;
+}
+
+#header.header-modern *,
+#header.header-modern *::before,
+#header.header-modern *::after {
+  box-sizing: border-box !important;
+}
+
+#header.header-modern .header-main-row {
+  height: var(--hdr-h) !important;
+  min-height: var(--hdr-h) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 12px !important;
+  padding: 0 10px !important;
+  margin: 0 !important;
+  /* visible so Beginner/Advanced and FILES submenus are not clipped */
+  overflow: visible !important;
+}
+
+#header.header-modern .header-left-group {
+  min-width: 0 !important;
+  flex: 1 1 auto !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+#header.header-modern #logo_Titre {
+  flex: 0 0 auto !important;
+  float: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  height: var(--hdr-logo-h) !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  background: transparent !important;
+}
+
+#header.header-modern #logo_Titre a.header-logo-link {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  text-decoration: none !important;
+  color: inherit !important;
+}
+
+#header.header-modern #logo_Titre #clearLink.header-logo-block {
+  display: inline-flex !important;
+  align-items: baseline !important;
+  justify-content: flex-start !important;
+  box-sizing: border-box !important;
+  height: auto !important;
+  max-height: none !important;
+  width: auto !important;
+  max-width: min(340px, 92vw) !important;
+  padding: 2px 6px 2px 2px !important;
+  margin-left: 0 !important;
+  font-family: "Poppins", system-ui, -apple-system, sans-serif !important;
+  font-weight: 700 !important;
+  font-size: clamp(15px, 2.1vw, 1.35rem) !important;
+  letter-spacing: 0.02em !important;
+  line-height: 1.2 !important;
+  color: #fff !important;
+  text-transform: lowercase !important;
+  white-space: nowrap !important;
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  text-shadow: 0 1px 2px rgba(22, 6, 34, 0.35) !important;
+}
+
+#header.header-modern #header_titres {
+  min-width: 0 !important;
+  flex: 1 1 auto !important;
+  display: flex !important;
+  align-items: center !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  position: static !important;
+}
+
+#header.header-modern #divTitreMenu {
+  min-width: 0 !important;
+  float: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: visible !important;
+}
+
+#header.header-modern #divTitreMenu_menu {
+  float: none !important;
+  display: block !important;
+}
+
+#header.header-modern #nav_hor,
+#header.header-modern #nav_hor ul,
+#header.header-modern #nav_hor li {
+  margin: 0 !important;
+  padding: 0 !important;
+  list-style: none !important;
+}
+
+#header.header-modern #nav_hor > ul {
+  display: flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+}
+
+#header.header-modern #nav_hor > ul > li {
+  position: relative !important;
+  display: inline-flex !important;
+  align-items: center !important;
+}
+
+#header.header-modern #nav_hor > ul > li > a {
+  height: var(--hdr-link-h) !important;
+  min-height: var(--hdr-link-h) !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0 14px !important;
+  border-radius: 8px !important;
+  background: transparent !important;
+  color: #ffffff !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.35px !important;
+  font-size: var(--hdr-link-font) !important;
+  font-weight: 700 !important;
+  line-height: 1 !important;
+  text-decoration: none !important;
+}
+
+#header.header-modern #nav_hor > ul > li > a:hover,
+#header.header-modern #nav_hor > ul > li > a:focus {
+  background: rgba(255, 255, 255, 0.18) !important;
+  color: #ffffff !important;
+}
+
+#header.header-modern #nav_hor > ul > li + li {
+  border-left: 1px solid rgba(255, 255, 255, 0.26) !important;
+}
+
+#header.header-modern #nav_hor .submenu {
+  position: absolute !important;
+  top: calc(100% + 4px) !important;
+  left: 0 !important;
+  min-width: 180px !important;
+  z-index: 1012 !important;
+  border-radius: 8px !important;
+  border: 1px solid rgba(106, 27, 154, 0.25) !important;
+  background: #7b1fa2 !important;
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.2) !important;
+}
+
+#header.header-modern #nav_hor .submenu > li > a {
+  display: block !important;
+  height: auto !important;
+  min-height: 0 !important;
+  padding: 10px 14px !important;
+  color: #fff !important;
+  background: transparent !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  text-transform: none !important;
+}
+
+#header.header-modern #nav_hor .submenu > li > a:hover,
+#header.header-modern #nav_hor .submenu > li > a:focus {
+  background: #9c27b0 !important;
+}
+
+#header.header-modern .header-right-group {
+  flex: 0 0 auto !important;
+  display: flex !important;
+  align-items: center !important;
+  min-width: 0 !important;
+}
+
+#header.header-modern #sideSerialControls {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  position: static !important;
+}
+
+#header.header-modern #sideSerialControls > button,
+#header.header-modern #sideSerialControls > select,
+#header.header-modern #sideSerialControls .mode-dropdown-toggle {
+  height: var(--hdr-control-h) !important;
+  min-height: var(--hdr-control-h) !important;
+  border-radius: 10px !important;
+  padding: 0 12px !important;
+  font-size: var(--hdr-control-font) !important;
+  line-height: 1 !important;
+}
+
+#header.header-modern #sideSerialControls .mode-dropdown-wrap {
+  position: relative !important;
+  z-index: 1020 !important;
+}
+
+#header.header-modern #sideSerialControls .open > .mode-dropdown-menu,
+#header.header-modern #sideSerialControls .mode-dropdown-menu {
+  z-index: 1021 !important;
+}
+
+#header.header-modern #header_code,
+#header.header-modern #header_supervision {
+  margin-left: 0 !important;
+  position: static !important;
+}
+
+@media (max-width: 1280px) {
+  :root {
+    --hdr-h: 52px;
+    --hdr-logo-h: 34px;
+    --hdr-link-h: 32px;
+    --hdr-link-font: 14px;
+    --hdr-control-h: 32px;
+    --hdr-control-font: 12px;
+  }
+}
+
+@media (max-width: 1024px) {
+  :root {
+    --hdr-h: 50px;
+    --hdr-logo-h: 32px;
+    --hdr-link-h: 32px;
+    --hdr-link-font: 13px;
+    --hdr-control-h: 32px;
+    --hdr-control-font: 12px;
+  }
+  #header.header-modern #nav_hor > ul > li > a {
+    padding: 0 10px !important;
+  }
+}
+
+@media (max-width: 820px) {
+  #header.header-modern .header-main-row {
+    flex-wrap: wrap !important;
+    align-items: center !important;
+    height: auto !important;
+    min-height: var(--hdr-h) !important;
+    padding-top: 6px !important;
+    padding-bottom: 6px !important;
+  }
+  #header.header-modern .header-left-group,
+  #header.header-modern .header-right-group {
+    width: 100% !important;
+  }
+  #header.header-modern .header-right-group {
+    justify-content: flex-start !important;
+  }
+}

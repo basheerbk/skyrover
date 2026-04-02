@@ -1,0 +1,9 @@
+#messagesOutput {
+  --messages-line-height: 1.35;
+  line-height: var(--messages-line-height);
+}
+
+#messagesMonitor .serial-output .message {
+  word-break: break-word;
+}
+
