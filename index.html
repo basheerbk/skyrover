@@ -41,15 +41,26 @@
             console.log('[GA] Using Client ID:', clientID);
 
             // GA4 Fallback via Measurement Protocol
+            function mergeAnalyticsEventParams(params) {
+                var extra = {};
+                try {
+                    if (typeof window.__BlockIDE_ANALYTICS_EVENT_DEFAULTS__ === 'function') {
+                        extra = window.__BlockIDE_ANALYTICS_EVENT_DEFAULTS__() || {};
+                    }
+                } catch (e) { /* ignore */ }
+                return Object.assign({}, extra, params || {});
+            }
+
             function sendFallbackEvent(eventName, params) {
                 try {
+                    var mergedParams = mergeAnalyticsEventParams(params);
                     // GA4 uses a different endpoint and payload structure
                     var cid = clientID; // Use the resolved ID
                     var payload = {
                         client_id: cid,
                         events: [{
                             name: eventName,
-                            params: params || {}
+                            params: mergedParams || {}
                         }]
                     };
 
@@ -73,10 +84,13 @@
                         '&en=' + eventName;
 
                     // Add more params to query string for reliability
-                    if (params) {
-                        for (var key in params) {
-                            if (params.hasOwnProperty(key)) {
-                                endpoint += '&ep.' + key + '=' + encodeURIComponent(params[key]);
+                    if (mergedParams) {
+                        for (var key in mergedParams) {
+                            if (mergedParams.hasOwnProperty(key)) {
+                                var val = mergedParams[key];
+                                if (val != null && val !== '') {
+                                    endpoint += '&ep.' + key + '=' + encodeURIComponent(String(val).slice(0, 500));
+                                }
                             }
                         }
                     }
@@ -107,7 +121,7 @@
                 // We force the fallback XHR here to ensure events are actually sent and visible.
                 if (isElectron && args.length >= 2 && args[0] === 'event') {
                     console.log('[GA] Electron detected, forcing XHR fallback for:', args[1]);
-                    sendFallbackEvent(args[1], args[2] || {});
+                    sendFallbackEvent(args[1], mergeAnalyticsEventParams(args[2] || {}));
                     // We also let it fall through to the standard tag just in case, but XHR is our primary.
                     if (scriptLoaded && typeof baseGtag === 'function') {
                         try { baseGtag.apply(window, arguments); } catch (e) { }
@@ -120,7 +134,7 @@
                 } else {
                     fallbackMode = true;
                     if (args.length >= 2 && args[0] === 'event') {
-                        sendFallbackEvent(args[1], args[2] || {});
+                        sendFallbackEvent(args[1], mergeAnalyticsEventParams(args[2] || {}));
                     } else if (args.length >= 2 && args[0] === 'config') {
                         console.log('[GA] Config queued (fallback):', args[1], args[2]);
                     } else {
@@ -131,21 +145,30 @@
 
             window.gtag = enhancedGtag;
 
+            // Bootstrap: replaced by js/blockide_analytics.js with locale, timezone, path, etc.
+            window.__BlockIDE_ANALYTICS_EVENT_DEFAULTS__ = function () {
+                return { app_platform: isElectron ? 'electron' : 'web' };
+            };
+
             // EXPOSED HELPER: Robust tracking that guarantees XHR in Electron
             // This bypasses potential overwrites of window.gtag by the standard library
-            window.trackGAEvent = function (eventName, params) {
-                console.log('[GA] trackGAEvent called:', eventName);
-                if (isElectron) {
-                    console.log('[GA] Forcing XHR for:', eventName);
-                    sendFallbackEvent(eventName, params || {});
-                } else {
-                    if (typeof window.gtag === 'function') {
-                        window.gtag('event', eventName, params);
+            (function () {
+                var trackCore = function (eventName, params) {
+                    var merged = mergeAnalyticsEventParams(params);
+                    console.log('[GA] trackGAEvent called:', eventName);
+                    if (isElectron) {
+                        console.log('[GA] Forcing XHR for:', eventName);
+                        sendFallbackEvent(eventName, merged);
                     } else {
-                        console.warn('[GA] gtag not found for event:', eventName);
+                        if (typeof window.gtag === 'function') {
+                            window.gtag('event', eventName, merged);
+                        } else {
+                            console.warn('[GA] gtag not found for event:', eventName);
+                        }
                     }
-                }
-            };
+                };
+                window.trackGAEvent = trackCore;
+            })();
 
             // Initial config with protocol check disabled
             // Note: We use the resolved clientID here explicitly
@@ -245,6 +268,7 @@
         })();
     </script>
     <!-- End Google Analytics -->
+    <script type="text/javascript" src="js/blockide_analytics.js"></script>
 
     <link rel="icon" type="image/png" href="favicon.png" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
@@ -302,6 +326,9 @@
     <!-- Block/generator definitions are in the bundle (dist/blockide_bundle.js) -->
     <!-- No need for arduino_resume.js, blocks_colors.js, or generator resume files -->
 
+    <!-- UI strings for Code.initLanguage (BlocklyDuino.init); must load before lang/code.js -->
+    <script type="text/javascript" src="lang/BlocklyArduino_msg/UI.js"></script>
+    <script type="text/javascript" src="lang/BlocklyArduino_msg/en.js"></script>
     <script type="text/javascript" src="lang/code.js"></script>
     <script type="text/javascript" src="lang/BlocklyArduino_blocks/en.js"></script>
 
@@ -1809,6 +1836,7 @@
 
             async function updateSerialPorts() {
                 const select = document.getElementById('serialport_ide');
+                const side = document.getElementById('side_serialport');
                 if (!select) return;
 
                 try {
@@ -1836,11 +1864,19 @@
                             select.disabled = false;
                             if (prev && ports.includes(prev)) select.value = prev;
                         }
+                        if (side && typeof window.blockideCopySelectOptions === 'function') {
+                            window.blockideCopySelectOptions(select, side);
+                        }
                     } else {
                         // Web: never use GET /ports (that is the server's /dev/tty*, not your PC)
-                        const prev = select.value;
-                        await window.blockideFillWebSerialSelect(select, prev);
+                        const prev = select.value || (side && side.value) || '';
+                        if (side && typeof window.blockideSyncWebSerialPortDropdowns === 'function') {
+                            await window.blockideSyncWebSerialPortDropdowns(side, select, prev);
+                        } else {
+                            await window.blockideFillWebSerialSelect(select, prev);
+                        }
                         window.blockideAttachWebSerialAddHandler(select);
+                        if (side) window.blockideAttachWebSerialAddHandler(side);
 
                         const ok = await pingCompileBackend();
                         const warning = document.getElementById('backend-warning');
@@ -1869,7 +1905,7 @@
             }
 
             updateSerialPorts();
-            setInterval(updateSerialPorts, 3000);
+            // Port lists refresh from the main serial panel script (updatePorts every 3s); avoid duplicate timers.
         });
     </script>
     <script>
@@ -1902,6 +1938,7 @@
 
             // Elements
             const portSelect = document.getElementById('side_serialport');
+            const idePortSelect = document.getElementById('serialport_ide');
             const connectBtn = document.getElementById('side_btn_connect_monitor');
             const uploadBtn = document.getElementById('side_btn_upload');
             const runBtn = document.getElementById('side_btn_run');
@@ -2010,6 +2047,24 @@
                 }
             }
 
+            function appendSerialMonitorChunk(chunk) {
+                if (serialOutput) {
+                    serialOutput.textContent += chunk;
+                    serialOutput.scrollTop = serialOutput.scrollHeight;
+                }
+                if (modalOutput) {
+                    modalOutput.textContent += chunk;
+                    modalOutput.scrollTop = modalOutput.scrollHeight;
+                }
+            }
+
+            function mirrorSerialPortToOther(fromEl, toEl) {
+                if (!fromEl || !toEl || !fromEl.value) return;
+                if (Array.from(toEl.options).some(function (o) { return o.value === fromEl.value; })) {
+                    toEl.value = fromEl.value;
+                }
+            }
+
             // 1. Populate port dropdown (web: your USB via Web Serial — never GET /ports from server)
             async function updatePorts() {
                 try {
@@ -2033,16 +2088,33 @@
                                 portSelect.value = previousSelection;
                             }
                         }
+                        if (idePortSelect && typeof window.blockideCopySelectOptions === 'function') {
+                            window.blockideCopySelectOptions(portSelect, idePortSelect);
+                        }
                     } else {
-                        const prev = portSelect.value;
-                        await window.blockideFillWebSerialSelect(portSelect, prev);
+                        const prev = portSelect.value || (idePortSelect && idePortSelect.value) || '';
+                        if (typeof window.blockideSyncWebSerialPortDropdowns === 'function') {
+                            await window.blockideSyncWebSerialPortDropdowns(portSelect, idePortSelect, prev);
+                        } else {
+                            await window.blockideFillWebSerialSelect(portSelect, prev);
+                        }
                         window.blockideAttachWebSerialAddHandler(portSelect);
+                        if (idePortSelect) window.blockideAttachWebSerialAddHandler(idePortSelect);
                     }
                 } catch (err) {
                     console.error('Error updating ports:', err);
                     portSelect.innerHTML = '<option value="">Error</option>';
                     portSelect.disabled = true;
                 }
+            }
+
+            if (portSelect && idePortSelect) {
+                portSelect.addEventListener('change', function () {
+                    mirrorSerialPortToOther(portSelect, idePortSelect);
+                });
+                idePortSelect.addEventListener('change', function () {
+                    mirrorSerialPortToOther(idePortSelect, portSelect);
+                });
             }
             updatePorts();
             setInterval(updatePorts, 3000);
@@ -2096,16 +2168,7 @@
                                 new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 5000))
                             ]);
                         } else if (window.blockideIsWebSerialPortValue && window.blockideIsWebSerialPortValue(port)) {
-                            await window.blockideBrowserSerialOpen(port, baudrate, function (chunk) {
-                                if (serialOutput) {
-                                    serialOutput.textContent += chunk;
-                                    serialOutput.scrollTop = serialOutput.scrollHeight;
-                                }
-                                if (modalOutput) {
-                                    modalOutput.textContent += chunk;
-                                    modalOutput.scrollTop = modalOutput.scrollHeight;
-                                }
-                            });
+                            await window.blockideBrowserSerialOpen(port, baudrate, appendSerialMonitorChunk);
                             result = { success: true };
                         } else {
                             addMessage('Select a USB serial device from the list (server /dev ports are not used in the browser).', 'error');
@@ -2115,6 +2178,7 @@
                         if (result && result.success) {
                             serialConnected = true;
                             connectedPort = port;
+                            mirrorSerialPortToOther(portSelect, idePortSelect);
                             setUiState('connected');
                             addMessage('Serial port open.', 'success');
                         } else {
@@ -2138,8 +2202,20 @@
                                 new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 5000))
                             ]);
                         } else {
-                            await window.blockideBrowserSerialClose();
-                            result = { success: true };
+                            var closeSummary =
+                                typeof window.blockideBrowserSerialClose === 'function'
+                                    ? await window.blockideBrowserSerialClose({ forget: true })
+                                    : null;
+                            result = { success: true, webSerialClose: closeSummary };
+                            try {
+                                await updatePorts();
+                            } catch (eUp) {
+                                console.warn('[Serial] updatePorts after disconnect failed', eUp);
+                                addMessage(
+                                    'Port list could not be refreshed: ' + (eUp.message || 'Unknown error'),
+                                    'warning'
+                                );
+                            }
                         }
 
                         serialConnected = false;
@@ -2147,7 +2223,69 @@
                         setUiState('idle');
 
                         if (result && result.success) {
-                            addMessage('Serial port closed.', 'info');
+                            if (isElectron) {
+                                addMessage('Serial port closed.', 'info');
+                            } else if (result.webSerialClose) {
+                                var ws = result.webSerialClose;
+                                var parts = [];
+                                if (!ws.hadActivePort) {
+                                    parts.push('Serial was already closed in the app.');
+                                } else if (!ws.closed) {
+                                    var closeErr = (ws.errors || []).find(function (x) {
+                                        return x.phase === 'close';
+                                    });
+                                    parts.push(
+                                        'The port may still be open in the browser: ' +
+                                            (closeErr ? closeErr.message : 'close failed') +
+                                            '. Try refreshing the page or unplugging the board.'
+                                    );
+                                } else {
+                                    parts.push('Serial port closed.');
+                                }
+                                if (ws.hadActivePort && ws.closed && ws.forgetRequested) {
+                                    if (ws.forgotten) {
+                                        parts.push(
+                                            'USB access was removed for this site — click Connect to pair your device again.'
+                                        );
+                                    } else if (ws.forgetSupported) {
+                                        var fe = (ws.errors || []).find(function (x) {
+                                            return x.phase === 'forget';
+                                        });
+                                        parts.push(
+                                            'Could not remove USB permission: ' +
+                                                (fe ? fe.message : 'forget() failed') +
+                                                '. You can revoke access in the browser site settings.'
+                                        );
+                                    } else {
+                                        var fu = (ws.errors || []).find(function (x) {
+                                            return x.phase === 'forget';
+                                        });
+                                        parts.push(
+                                            fu
+                                                ? fu.message
+                                                : 'This browser may not support unpair; revoke USB access in site settings if needed.'
+                                        );
+                                    }
+                                }
+                                (ws.errors || []).forEach(function (er) {
+                                    if (er.phase === 'reader_cancel' || er.phase === 'reader_release') {
+                                        console.warn('[Serial] disconnect reader step', er.phase, er.message);
+                                    }
+                                });
+                                var level =
+                                    ws.hadActivePort && !ws.closed
+                                        ? 'error'
+                                        : ws.hadActivePort &&
+                                            ws.closed &&
+                                            ws.forgetRequested &&
+                                            !ws.forgotten &&
+                                            ws.forgetSupported
+                                          ? 'warning'
+                                          : 'info';
+                                addMessage(parts.join(' '), level);
+                            } else {
+                                addMessage('Serial port closed.', 'info');
+                            }
                         } else {
                             addMessage('Failed to close port: ' + (result.error || 'Unknown error'), 'error');
                         }
@@ -2810,33 +2948,52 @@
                     ? window.BlockIDEUploadState.begin()
                     : Date.now();
 
-                // Snapshot for ESP web flash: after we async-close Serial + setTimeout(doUpload), user gesture is gone —
-                // reuse the already-authorized port from getPorts() instead of requestPort().
+                // Web ESP/Uno: use paired USB from Connect or port dropdown (same index in getPorts()); no Upload-time requestPort.
                 var boardEarly = typeof window.resolveBoardFqbnFromProfile === 'function'
                     ? window.resolveBoardFqbnFromProfile()
                     : 'arduino:avr:uno';
                 var useWebEspEarly = !isElectron && (boardEarly.indexOf('esp32:') === 0 || boardEarly.indexOf('esp8266:') === 0 || boardEarly === 'arduino:avr:uno');
-                var savedWebSerialForEspFlash =
-                    serialConnected &&
-                    useWebEspEarly &&
-                    typeof window.blockideIsWebSerialPortValue === 'function' &&
-                    window.blockideIsWebSerialPortValue(connectedPort)
-                        ? connectedPort
-                        : null;
+                var savedWebSerialForEspFlash = null;
+                if (useWebEspEarly && typeof window.blockideIsWebSerialPortValue === 'function') {
+                    if (serialConnected && connectedPort && window.blockideIsWebSerialPortValue(connectedPort)) {
+                        savedWebSerialForEspFlash = connectedPort;
+                    } else if (portSelect && window.blockideIsWebSerialPortValue(portSelect.value)) {
+                        savedWebSerialForEspFlash = portSelect.value;
+                    } else if (idePortSelect && window.blockideIsWebSerialPortValue(idePortSelect.value)) {
+                        savedWebSerialForEspFlash = idePortSelect.value;
+                    }
+                }
 
-                var capturedEspPortPromise;
                 if (!serialConnected && useWebEspEarly && navigator.serial) {
                     var syncUp = blockideReadSketchForSideUploadSync();
                     if (syncUp.emptySketch) {
                         addMessage('Upload failed: No code to upload. Add blocks or check the Arduino preview.', 'error');
-                        setUiState(serialConnected ? 'connected' : 'idle');
+                        setUiState('idle');
+                        if (window.BlockIDEUploadState && window.BlockIDEUploadState.move) {
+                            window.BlockIDEUploadState.move('idle', thisRunId);
+                        }
                         return;
                     }
-                    try {
-                        capturedEspPortPromise = navigator.serial.requestPort();
-                    } catch (eCap) {
-                        capturedEspPortPromise = Promise.reject(eCap);
+                    if (!savedWebSerialForEspFlash) {
+                        addMessage(
+                            'Choose your board USB port first: click Connect and pick your device in the browser dialog (Chrome/Edge), then Upload again.',
+                            'error'
+                        );
+                        setUiState('idle');
+                        if (window.BlockIDEUploadState && window.BlockIDEUploadState.move) {
+                            window.BlockIDEUploadState.move('idle', thisRunId);
+                        }
+                        return;
                     }
+                }
+
+                var reopenSerialAfterWebFlash = false;
+                var reopenSerialPortValue = null;
+                var reopenSerialBaud = null;
+                if (serialConnected && useWebEspEarly) {
+                    reopenSerialAfterWebFlash = true;
+                    reopenSerialPortValue = connectedPort;
+                    reopenSerialBaud = parseInt(baudRateSelect.value, 10) || 9600;
                 }
 
                 async function doUpload() {
@@ -2903,14 +3060,17 @@
                                     : 'Web Serial not available — use Chrome or Edge (latest).',
                                 'error'
                             );
+                            finishUploadUiState();
                             return;
                         }
                         if (typeof window.BlockIDE === 'undefined' || typeof window.BlockIDE.compileAndFlashEsp32Web !== 'function') {
                             addMessage('ESP web flash bundle missing. Run npm run build:bundle and reload.', 'error');
+                            finishUploadUiState();
                             return;
                         }
                         if (typeof window.BlockIDE.compileEsp32ForWeb !== 'function') {
                             addMessage('ESP compile helper missing from bundle. Run npm run build:bundle and reload.', 'error');
+                            finishUploadUiState();
                             return;
                         }
                         if (window.BlockIDEUploadState && window.BlockIDEUploadState.move) {
@@ -2946,15 +3106,34 @@
                                 onLog: function (s) { addMessage(String(s), 'info'); },
                                 serialPort: preFlashSerialPort || undefined
                             };
-                            if (typeof capturedEspPortPromise !== 'undefined') {
-                                flashOptsEsp.portPromise = capturedEspPortPromise;
-                            }
                             await window.BlockIDE.compileAndFlashEsp32Web(flashOptsEsp);
                             if (window.BlockIDEUploadState && window.BlockIDEUploadState.move) {
                                 window.BlockIDEUploadState.move('done', thisRunId);
                                 window.BlockIDEUploadState.move('idle', thisRunId);
                             }
                             addMessage('Upload completed successfully!', 'success');
+                            if (reopenSerialAfterWebFlash && reopenSerialPortValue &&
+                                window.blockideIsWebSerialPortValue &&
+                                window.blockideIsWebSerialPortValue(reopenSerialPortValue)) {
+                                try {
+                                    await window.blockideBrowserSerialOpen(
+                                        reopenSerialPortValue,
+                                        reopenSerialBaud,
+                                        appendSerialMonitorChunk
+                                    );
+                                    serialConnected = true;
+                                    connectedPort = reopenSerialPortValue;
+                                    if (portSelect) portSelect.value = reopenSerialPortValue;
+                                    mirrorSerialPortToOther(portSelect, idePortSelect);
+                                    setUiState('connected');
+                                    addMessage('Serial monitor reopened.', 'info');
+                                } catch (eReopen) {
+                                    addMessage(
+                                        'Upload OK — serial monitor did not reopen: ' + (eReopen.message || eReopen),
+                                        'warning'
+                                    );
+                                }
+                            }
                         } catch (err) {
                             if (window.BlockIDEUploadState && window.BlockIDEUploadState.move) {
                                 window.BlockIDEUploadState.move('error', thisRunId);
@@ -2979,14 +3158,17 @@
                                     : 'Web Serial not available — use Chrome or Edge (latest).',
                                 'error'
                             );
+                            finishUploadUiState();
                             return;
                         }
                         if (typeof window.BlockIDE === 'undefined' || typeof window.BlockIDE.compileAndFlashUnoWeb !== 'function') {
                             addMessage('Uno web flash bundle missing. Run npm run build:bundle and reload.', 'error');
+                            finishUploadUiState();
                             return;
                         }
                         if (typeof window.BlockIDE.compileUnoForWeb !== 'function') {
                             addMessage('Uno compile helper missing from bundle. Run npm run build:bundle and reload.', 'error');
+                            finishUploadUiState();
                             return;
                         }
                         if (window.BlockIDEUploadState && window.BlockIDEUploadState.move) {
@@ -3022,15 +3204,34 @@
                                 onLog: function (s) { addMessage(String(s), 'info'); },
                                 serialPort: preFlashSerialPortUno || undefined
                             };
-                            if (typeof capturedEspPortPromise !== 'undefined') {
-                                flashOptsUno.portPromise = capturedEspPortPromise;
-                            }
                             await window.BlockIDE.compileAndFlashUnoWeb(flashOptsUno);
                             if (window.BlockIDEUploadState && window.BlockIDEUploadState.move) {
                                 window.BlockIDEUploadState.move('done', thisRunId);
                                 window.BlockIDEUploadState.move('idle', thisRunId);
                             }
                             addMessage('Upload completed successfully!', 'success');
+                            if (reopenSerialAfterWebFlash && reopenSerialPortValue &&
+                                window.blockideIsWebSerialPortValue &&
+                                window.blockideIsWebSerialPortValue(reopenSerialPortValue)) {
+                                try {
+                                    await window.blockideBrowserSerialOpen(
+                                        reopenSerialPortValue,
+                                        reopenSerialBaud,
+                                        appendSerialMonitorChunk
+                                    );
+                                    serialConnected = true;
+                                    connectedPort = reopenSerialPortValue;
+                                    if (portSelect) portSelect.value = reopenSerialPortValue;
+                                    mirrorSerialPortToOther(portSelect, idePortSelect);
+                                    setUiState('connected');
+                                    addMessage('Serial monitor reopened.', 'info');
+                                } catch (eReopenUno) {
+                                    addMessage(
+                                        'Upload OK — serial monitor did not reopen: ' + (eReopenUno.message || eReopenUno),
+                                        'warning'
+                                    );
+                                }
+                            }
                         } catch (err) {
                             if (window.BlockIDEUploadState && window.BlockIDEUploadState.move) {
                                 window.BlockIDEUploadState.move('error', thisRunId);
@@ -3051,7 +3252,14 @@
                         return;
                     }
                     if (!isElectron && window.blockideIsWebSerialPortValue && window.blockideIsWebSerialPortValue(port)) {
-                        addMessage('Upload failed: Browser USB ports cannot be sent to the cloud server. Use ESP32/ESP8266 or Arduino Uno web upload, or Arduino IDE for other boards.', 'error');
+                        var nanoMegaWeb =
+                            board.indexOf('arduino:avr:nano') === 0 || board.indexOf('arduino:avr:mega') === 0;
+                        addMessage(
+                            nanoMegaWeb
+                                ? 'Nano/Mega in the browser: the cloud server cannot use your PC’s USB port. Use the desktop app, run this IDE on the same machine as the board with Arduino CLI, or use Arduino IDE. (ESP32/ESP8266/Uno support browser USB upload from this site.)'
+                                : 'Upload failed: Browser USB ports cannot be sent to the cloud server. Use ESP32/ESP8266 or Arduino Uno web upload, or Arduino IDE for other boards.',
+                            'error'
+                        );
                         return;
                     }
                     addMessage('Uploading to board (' + board + ') on port ' + port + '...', 'info');
@@ -3648,10 +3856,13 @@
             var connectBtn = document.getElementById('side_btn_connect_monitor');
             if (connectBtn) {
                 connectBtn.addEventListener('click', function () {
-                    // Check if we are connecting or disconnecting based on button text or state
-                    // Simple "click" tracking is sufficient for engagement
+                    var label = (connectBtn.textContent || '').toLowerCase();
+                    var intent = label.indexOf('disconnect') !== -1 ? 'disconnect' : 'connect';
                     if (typeof window.trackGAEvent === 'function') {
-                        window.trackGAEvent('serial_connect');
+                        window.trackGAEvent('serial_monitor_action', {
+                            intent: intent,
+                            transport: 'side_panel'
+                        });
                     }
                 });
             }

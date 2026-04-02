@@ -83,7 +83,7 @@
       empty.value = 'no_com';
       empty.textContent = showAdd
         ? 'No device paired — use ＋ Add to pick your board'
-        : 'No USB device yet — use Upload (ESP32/8266) once to pick your port';
+        : 'No USB device yet — click Connect and choose your board in the browser dialog';
       selectEl.appendChild(empty);
       selectEl.disabled = false;
     } else {
@@ -129,9 +129,66 @@
     });
   };
 
+  /**
+   * Fill two dropdowns from the same Web Serial getPorts() snapshot so option values match.
+   * @param {HTMLSelectElement|null} selA
+   * @param {HTMLSelectElement|null} selB
+   * @param {string} [preferValue]
+   */
+  w.blockideSyncWebSerialPortDropdowns = async function (selA, selB, preferValue) {
+    var pref =
+      preferValue != null
+        ? preferValue
+        : (selA && selA.value) || (selB && selB.value) || '';
+    if (selA) {
+      await w.blockideFillWebSerialSelect(selA, pref);
+    }
+    var v = selA ? selA.value : pref;
+    if (selB) {
+      await w.blockideFillWebSerialSelect(selB, v);
+    }
+    if (selA && selB && selA.value && Array.from(selB.options).some(function (o) { return o.value === selA.value; })) {
+      selB.value = selA.value;
+    } else if (selB && selB.value && selA && Array.from(selA.options).some(function (o) { return o.value === selB.value; })) {
+      selA.value = selB.value;
+    }
+  };
+
+  /**
+   * Copy options from one select to another (Electron COM list).
+   * @param {HTMLSelectElement|null} fromEl
+   * @param {HTMLSelectElement|null} toEl
+   */
+  w.blockideCopySelectOptions = function (fromEl, toEl) {
+    if (!fromEl || !toEl) return;
+    toEl.innerHTML = fromEl.innerHTML;
+    toEl.disabled = fromEl.disabled;
+    var v = fromEl.value;
+    if (v && Array.from(toEl.options).some(function (o) { return o.value === v; })) {
+      toEl.value = v;
+    }
+  };
+
   var serialReadActive = false;
   var activeReader = null;
   var activePort = null;
+
+  function serialErrorMessage(e) {
+    if (e == null) return 'Unknown error';
+    if (typeof e === 'string') return e;
+    return e.message || String(e);
+  }
+
+  /** True when close() failed only because the port was already closed (safe to try forget). */
+  function isAlreadyClosedError(e) {
+    if (!e) return false;
+    var name = e.name || '';
+    var msg = (e.message || '').toLowerCase();
+    if (name === 'InvalidStateError') return true;
+    if (msg.indexOf('already closed') !== -1) return true;
+    if (msg.indexOf('the port is already closed') !== -1) return true;
+    return false;
+  }
 
   w.blockideBrowserSerialOpen = async function (portValue, baudRate, onChunk) {
     await w.blockideBrowserSerialClose();
@@ -139,14 +196,33 @@
     if (idx == null || !navigator.serial) {
       throw new Error('Invalid USB serial selection');
     }
-    var ports = await navigator.serial.getPorts();
+    var ports;
+    try {
+      ports = await navigator.serial.getPorts();
+    } catch (e) {
+      throw new Error('Could not list USB devices: ' + serialErrorMessage(e));
+    }
     var port = ports[idx];
     if (!port) {
       throw new Error('That USB device is no longer listed — use ＋ Add again');
     }
-    await port.open({ baudRate: baudRate || 9600 });
+    try {
+      await port.open({ baudRate: baudRate || 9600 });
+    } catch (e) {
+      throw new Error('Could not open port: ' + serialErrorMessage(e));
+    }
+    var reader;
+    try {
+      reader = port.readable.getReader();
+    } catch (e) {
+      try {
+        await port.close();
+      } catch (_) {
+        /* ignore */
+      }
+      throw new Error('Could not start serial reader: ' + serialErrorMessage(e));
+    }
     activePort = port;
-    var reader = port.readable.getReader();
     activeReader = reader;
     serialReadActive = true;
     var dec = new TextDecoder();
@@ -172,29 +248,102 @@
     return true;
   };
 
-  w.blockideBrowserSerialClose = async function () {
+  /**
+   * Close the active Web Serial connection.
+   * @param {{ forget?: boolean }} [options] If forget is true, call SerialPort.forget() after close (Chrome/Edge)
+   *   so the site loses permission until the user picks the device again in Connect. Omit or false for temporary
+   *   closes (e.g. before firmware upload).
+   * @returns {Promise<{
+   *   stateCleared: boolean,
+   *   hadActivePort: boolean,
+   *   closed: boolean,
+   *   forgetRequested: boolean,
+   *   forgetSupported: boolean,
+   *   forgotten: boolean,
+   *   errors: Array<{ phase: string, message: string }>
+   * }>}
+   */
+  w.blockideBrowserSerialClose = async function (options) {
+    var forgetPairing = options && options.forget === true;
+    var errors = [];
+    var hadActivePort = !!activePort;
+    var closed = false;
+    var forgotten = false;
+    var forgetSupported = false;
+
+    if (!navigator.serial) {
+      serialReadActive = false;
+      activeReader = null;
+      activePort = null;
+      return {
+        stateCleared: true,
+        hadActivePort: hadActivePort,
+        closed: !hadActivePort,
+        forgetRequested: forgetPairing,
+        forgetSupported: false,
+        forgotten: false,
+        errors: hadActivePort
+          ? [{ phase: 'api', message: 'Web Serial API is not available in this context' }]
+          : []
+      };
+    }
+
     serialReadActive = false;
     if (activeReader) {
       try {
         await activeReader.cancel();
-      } catch (_) {
-        /* ignore */
+      } catch (e) {
+        errors.push({ phase: 'reader_cancel', message: serialErrorMessage(e) });
       }
       try {
         activeReader.releaseLock();
-      } catch (_) {
-        /* ignore */
+      } catch (e) {
+        errors.push({ phase: 'reader_release', message: serialErrorMessage(e) });
       }
     }
     activeReader = null;
-    if (activePort) {
+    var portRef = activePort;
+    activePort = null;
+
+    if (portRef) {
       try {
-        await activePort.close();
-      } catch (_) {
-        /* ignore */
+        await portRef.close();
+        closed = true;
+      } catch (e) {
+        if (isAlreadyClosedError(e)) {
+          closed = true;
+        } else {
+          errors.push({ phase: 'close', message: serialErrorMessage(e) });
+        }
+      }
+
+      if (forgetPairing && typeof portRef.forget === 'function') {
+        forgetSupported = true;
+        if (closed) {
+          try {
+            await portRef.forget();
+            forgotten = true;
+          } catch (e) {
+            errors.push({ phase: 'forget', message: serialErrorMessage(e) });
+          }
+        }
+      } else if (forgetPairing) {
+        errors.push({
+          phase: 'forget',
+          message: 'This browser does not support unpairing (SerialPort.forget). Use site settings to revoke USB access if needed.'
+        });
       }
     }
-    activePort = null;
+
+    return {
+      stateCleared: true,
+      hadActivePort: hadActivePort,
+      closed: hadActivePort ? closed : true,
+      forgetRequested: forgetPairing,
+      forgetSupported: forgetSupported,
+      forgotten: forgotten,
+      errors: errors
+    };
   };
 
   w.blockideBrowserSerialIsOpen = function () {
@@ -206,11 +355,22 @@
       throw new Error('Serial port is not open');
     }
     var enc = new TextEncoder();
-    var writer = activePort.writable.getWriter();
+    var writer;
+    try {
+      writer = activePort.writable.getWriter();
+    } catch (e) {
+      throw new Error('Serial write stream is busy: ' + serialErrorMessage(e));
+    }
     try {
       await writer.write(enc.encode(text));
+    } catch (e) {
+      throw new Error('Serial write failed: ' + serialErrorMessage(e));
     } finally {
-      writer.releaseLock();
+      try {
+        writer.releaseLock();
+      } catch (e) {
+        console.warn('[WebSerial] releaseLock after write', e);
+      }
     }
   };
 })(typeof window !== 'undefined' ? window : this);

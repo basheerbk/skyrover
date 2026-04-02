@@ -353,6 +353,13 @@ BlocklyDuino.verify_local_Click = function () {
 
         window.electronAPI.compileCode({ code: code, board: board })
             .then(function (result) {
+                if (typeof window.trackGAEvent === 'function') {
+                    window.trackGAEvent('compile_result', {
+                        success: result.success ? 'true' : 'false',
+                        board: board,
+                        transport: 'electron'
+                    });
+                }
                 if (result.success) {
                     var msg = "Done Compiling!";
                     if (result.message && result.message !== "Compilation successful") {
@@ -365,6 +372,9 @@ BlocklyDuino.verify_local_Click = function () {
                 }
             })
             .catch(function (err) {
+                if (typeof window.trackGAEvent === 'function') {
+                    window.trackGAEvent('compile_result', { success: 'false', board: board, transport: 'electron', error: 'ipc' });
+                }
                 if (window.addNewMessage) addNewMessage("System Error: " + err, "error");
                 console.error("Compile error:", err);
             });
@@ -378,6 +388,13 @@ BlocklyDuino.verify_local_Click = function () {
         })
             .then(function (r) { return r.json(); })
             .then(function (result) {
+                if (typeof window.trackGAEvent === 'function') {
+                    window.trackGAEvent('compile_result', {
+                        success: result.success ? 'true' : 'false',
+                        board: board,
+                        transport: 'web_http'
+                    });
+                }
                 if (result.success) {
                     var msg = "Done Compiling!";
                     if (result.message && result.message !== "Compilation successful") {
@@ -389,6 +406,9 @@ BlocklyDuino.verify_local_Click = function () {
                 }
             })
             .catch(function (err) {
+                if (typeof window.trackGAEvent === 'function') {
+                    window.trackGAEvent('compile_result', { success: 'false', board: board, transport: 'web_http', error: 'network' });
+                }
                 if (window.addNewMessage) addNewMessage("Compile request failed: " + err, "error");
                 console.error("Compile error:", err);
             });
@@ -436,6 +456,13 @@ BlocklyDuino.uploadClick = function () {
 
         window.electronAPI.uploadCode({ code: code, board: board, port: port })
             .then(function (result) {
+                if (typeof window.trackGAEvent === 'function') {
+                    window.trackGAEvent('upload_result', {
+                        success: result.success ? 'true' : 'false',
+                        board: board,
+                        transport: 'electron'
+                    });
+                }
                 if (result.success) {
                     if (window.BlockIDEUploadState && window.BlockIDEUploadState.move) {
                         window.BlockIDEUploadState.move('done', uploadRunId);
@@ -456,6 +483,9 @@ BlocklyDuino.uploadClick = function () {
                 }
             })
             .catch(function (err) {
+                if (typeof window.trackGAEvent === 'function') {
+                    window.trackGAEvent('upload_result', { success: 'false', board: board, transport: 'electron', error: 'ipc' });
+                }
                 if (window.BlockIDEUploadState && window.BlockIDEUploadState.move) {
                     window.BlockIDEUploadState.move('error', uploadRunId);
                     window.BlockIDEUploadState.move('idle', uploadRunId);
@@ -466,40 +496,80 @@ BlocklyDuino.uploadClick = function () {
         return;
     }
 
-    // Web: ESP32 / ESP8266 — compile + Web Serial (server has no access to your USB)
+    // Web: ESP32 / ESP8266 — compile + Web Serial (paired port from Connect / dropdown; no Upload-time picker)
     var useEspWebSerial =
       board.indexOf('esp32:') === 0 ||
       board.indexOf('esp8266:') === 0;
     if (useEspWebSerial && typeof navigator !== 'undefined' && navigator.serial &&
         typeof window.BlockIDE !== 'undefined' && typeof window.BlockIDE.compileAndFlashEsp32Web === 'function') {
-        if (window.addNewMessage) addNewMessage(MSG['span_flash_local'] + " (Web Serial)...", "info");
-        var portPromiseFromClick = null;
-        try {
-            portPromiseFromClick = navigator.serial.requestPort();
-        } catch (eGesture) {
-            portPromiseFromClick = Promise.reject(eGesture);
-        }
-        window.BlockIDE.compileAndFlashEsp32Web({
-            backendUrl: BlocklyDuino.getBackendBaseUrl(),
-            code: code,
-            board: board,
-            portPromise: portPromiseFromClick,
-            onLog: function (s) {
-                if (window.addNewMessage) addNewMessage(String(s), "info");
+        (function () {
+            var sideEl = typeof document !== 'undefined' ? document.getElementById('side_serialport') : null;
+            var ideEl = typeof document !== 'undefined' ? document.getElementById('serialport_ide') : null;
+            var pairedVal = null;
+            if (window.blockideIsWebSerialPortValue && sideEl && window.blockideIsWebSerialPortValue(sideEl.value)) {
+                pairedVal = sideEl.value;
+            } else if (window.blockideIsWebSerialPortValue && ideEl && window.blockideIsWebSerialPortValue(ideEl.value)) {
+                pairedVal = ideEl.value;
             }
-        }).then(function () {
-            if (window.BlockIDEUploadState && window.BlockIDEUploadState.move) {
-                window.BlockIDEUploadState.move('done', uploadRunId);
-                window.BlockIDEUploadState.move('idle', uploadRunId);
+            if (!pairedVal) {
+                if (window.addNewMessage) {
+                    addNewMessage(
+                        'Connect first: use Connect in the serial panel and pick your USB device, then Upload again.',
+                        'error'
+                    );
+                }
+                if (window.BlockIDEUploadState && window.BlockIDEUploadState.move) {
+                    window.BlockIDEUploadState.move('idle', uploadRunId);
+                }
+                return;
             }
-            if (window.addNewMessage) addNewMessage("Done uploading!", "success");
-        }).catch(function (err) {
-            if (window.BlockIDEUploadState && window.BlockIDEUploadState.move) {
-                window.BlockIDEUploadState.move('error', uploadRunId);
-                window.BlockIDEUploadState.move('idle', uploadRunId);
-            }
-            if (window.addNewMessage) addNewMessage("Upload failed: " + (err.message || err), "error");
-        });
+            (async function () {
+                try {
+                    if (window.blockideBrowserSerialIsOpen && window.blockideBrowserSerialIsOpen()) {
+                        await window.blockideBrowserSerialClose();
+                    }
+                    var wsIx = window.blockideWebSerialParseIndex(pairedVal);
+                    var portList = await navigator.serial.getPorts();
+                    var serialPortObj = wsIx != null ? portList[wsIx] : null;
+                    if (!serialPortObj) {
+                        if (window.addNewMessage) {
+                            addNewMessage('USB port not found. Click Connect and choose your device again.', 'error');
+                        }
+                        if (window.BlockIDEUploadState && window.BlockIDEUploadState.move) {
+                            window.BlockIDEUploadState.move('idle', uploadRunId);
+                        }
+                        return;
+                    }
+                    if (window.addNewMessage) addNewMessage(MSG['span_flash_local'] + ' (Web Serial)...', 'info');
+                    await window.BlockIDE.compileAndFlashEsp32Web({
+                        backendUrl: BlocklyDuino.getBackendBaseUrl(),
+                        code: code,
+                        board: board,
+                        serialPort: serialPortObj,
+                        onLog: function (s) {
+                            if (window.addNewMessage) addNewMessage(String(s), 'info');
+                        }
+                    });
+                    if (window.BlockIDEUploadState && window.BlockIDEUploadState.move) {
+                        window.BlockIDEUploadState.move('done', uploadRunId);
+                        window.BlockIDEUploadState.move('idle', uploadRunId);
+                    }
+                    if (window.addNewMessage) addNewMessage('Done uploading!', 'success');
+                    if (typeof window.trackGAEvent === 'function') {
+                        window.trackGAEvent('upload_result', { success: 'true', board: board, transport: 'web_serial_esp' });
+                    }
+                } catch (err) {
+                    if (typeof window.trackGAEvent === 'function') {
+                        window.trackGAEvent('upload_result', { success: 'false', board: board, transport: 'web_serial_esp', error: 'exception' });
+                    }
+                    if (window.BlockIDEUploadState && window.BlockIDEUploadState.move) {
+                        window.BlockIDEUploadState.move('error', uploadRunId);
+                        window.BlockIDEUploadState.move('idle', uploadRunId);
+                    }
+                    if (window.addNewMessage) addNewMessage('Upload failed: ' + (err.message || err), 'error');
+                }
+            })();
+        })();
         return;
     }
     if (useEspWebSerial && (!navigator || !navigator.serial)) {
@@ -514,38 +584,78 @@ BlocklyDuino.uploadClick = function () {
         return;
     }
 
-    // Web: Arduino Uno — compile + Web Serial (Optiboot / STK500)
+    // Web: Arduino Uno — compile + Web Serial (paired port from Connect / dropdown)
     var useUnoWebSerial = board === 'arduino:avr:uno';
     if (useUnoWebSerial && typeof navigator !== 'undefined' && navigator.serial &&
         typeof window.BlockIDE !== 'undefined' && typeof window.BlockIDE.compileAndFlashUnoWeb === 'function') {
-        if (window.addNewMessage) addNewMessage(MSG['span_flash_local'] + " (Web Serial, Uno)…", "info");
-        var portPromiseUno = null;
-        try {
-            portPromiseUno = navigator.serial.requestPort();
-        } catch (eUnoGesture) {
-            portPromiseUno = Promise.reject(eUnoGesture);
-        }
-        window.BlockIDE.compileAndFlashUnoWeb({
-            backendUrl: BlocklyDuino.getBackendBaseUrl(),
-            code: code,
-            board: board,
-            portPromise: portPromiseUno,
-            onLog: function (s) {
-                if (window.addNewMessage) addNewMessage(String(s), "info");
+        (function () {
+            var sideEl = typeof document !== 'undefined' ? document.getElementById('side_serialport') : null;
+            var ideEl = typeof document !== 'undefined' ? document.getElementById('serialport_ide') : null;
+            var pairedVal = null;
+            if (window.blockideIsWebSerialPortValue && sideEl && window.blockideIsWebSerialPortValue(sideEl.value)) {
+                pairedVal = sideEl.value;
+            } else if (window.blockideIsWebSerialPortValue && ideEl && window.blockideIsWebSerialPortValue(ideEl.value)) {
+                pairedVal = ideEl.value;
             }
-        }).then(function () {
-            if (window.BlockIDEUploadState && window.BlockIDEUploadState.move) {
-                window.BlockIDEUploadState.move('done', uploadRunId);
-                window.BlockIDEUploadState.move('idle', uploadRunId);
+            if (!pairedVal) {
+                if (window.addNewMessage) {
+                    addNewMessage(
+                        'Connect first: use Connect in the serial panel and pick your USB device, then Upload again.',
+                        'error'
+                    );
+                }
+                if (window.BlockIDEUploadState && window.BlockIDEUploadState.move) {
+                    window.BlockIDEUploadState.move('idle', uploadRunId);
+                }
+                return;
             }
-            if (window.addNewMessage) addNewMessage("Done uploading!", "success");
-        }).catch(function (err) {
-            if (window.BlockIDEUploadState && window.BlockIDEUploadState.move) {
-                window.BlockIDEUploadState.move('error', uploadRunId);
-                window.BlockIDEUploadState.move('idle', uploadRunId);
-            }
-            if (window.addNewMessage) addNewMessage("Upload failed: " + (err.message || err), "error");
-        });
+            (async function () {
+                try {
+                    if (window.blockideBrowserSerialIsOpen && window.blockideBrowserSerialIsOpen()) {
+                        await window.blockideBrowserSerialClose();
+                    }
+                    var wsIx = window.blockideWebSerialParseIndex(pairedVal);
+                    var portList = await navigator.serial.getPorts();
+                    var serialPortObj = wsIx != null ? portList[wsIx] : null;
+                    if (!serialPortObj) {
+                        if (window.addNewMessage) {
+                            addNewMessage('USB port not found. Click Connect and choose your device again.', 'error');
+                        }
+                        if (window.BlockIDEUploadState && window.BlockIDEUploadState.move) {
+                            window.BlockIDEUploadState.move('idle', uploadRunId);
+                        }
+                        return;
+                    }
+                    if (window.addNewMessage) addNewMessage(MSG['span_flash_local'] + ' (Web Serial, Uno)…', 'info');
+                    await window.BlockIDE.compileAndFlashUnoWeb({
+                        backendUrl: BlocklyDuino.getBackendBaseUrl(),
+                        code: code,
+                        board: board,
+                        serialPort: serialPortObj,
+                        onLog: function (s) {
+                            if (window.addNewMessage) addNewMessage(String(s), 'info');
+                        }
+                    });
+                    if (window.BlockIDEUploadState && window.BlockIDEUploadState.move) {
+                        window.BlockIDEUploadState.move('done', uploadRunId);
+                        window.BlockIDEUploadState.move('idle', uploadRunId);
+                    }
+                    if (window.addNewMessage) addNewMessage('Done uploading!', 'success');
+                    if (typeof window.trackGAEvent === 'function') {
+                        window.trackGAEvent('upload_result', { success: 'true', board: board, transport: 'web_serial_uno' });
+                    }
+                } catch (err) {
+                    if (typeof window.trackGAEvent === 'function') {
+                        window.trackGAEvent('upload_result', { success: 'false', board: board, transport: 'web_serial_uno', error: 'exception' });
+                    }
+                    if (window.BlockIDEUploadState && window.BlockIDEUploadState.move) {
+                        window.BlockIDEUploadState.move('error', uploadRunId);
+                        window.BlockIDEUploadState.move('idle', uploadRunId);
+                    }
+                    if (window.addNewMessage) addNewMessage('Upload failed: ' + (err.message || err), 'error');
+                }
+            })();
+        })();
         return;
     }
     if (useUnoWebSerial && (!navigator || !navigator.serial)) {
@@ -562,9 +672,13 @@ BlocklyDuino.uploadClick = function () {
 
     if (typeof window.blockideIsWebSerialPortValue === 'function' && window.blockideIsWebSerialPortValue(port)) {
         if (window.addNewMessage) {
+            var nanoMega =
+                board.indexOf('arduino:avr:nano') === 0 || board.indexOf('arduino:avr:mega') === 0;
             addNewMessage(
-                'The cloud server cannot upload to a USB port on your PC. For ESP32/ESP8266 or Arduino Uno use Upload (Web Serial). For other boards use the desktop app, run Block IDE locally, or Arduino IDE.',
-                'warning'
+                nanoMega
+                    ? 'Nano/Mega in the browser: the cloud server cannot use your PC’s USB port. Use the desktop app, run the IDE on the same machine as the board, or Arduino IDE. (ESP32/ESP8266/Uno support browser USB upload.)'
+                    : 'The cloud server cannot upload to a USB port on your PC. For ESP32/ESP8266 or Arduino Uno use Connect then Upload. For other boards use the desktop app, run Block IDE locally, or Arduino IDE.',
+                nanoMega ? 'error' : 'warning'
             );
         }
         return;
@@ -584,6 +698,13 @@ BlocklyDuino.uploadClick = function () {
     })
         .then(function (r) { return r.json(); })
         .then(function (result) {
+            if (typeof window.trackGAEvent === 'function') {
+                window.trackGAEvent('upload_result', {
+                    success: result.success ? 'true' : 'false',
+                    board: board,
+                    transport: 'web_http'
+                });
+            }
             if (result.success) {
                 if (window.BlockIDEUploadState && window.BlockIDEUploadState.move) {
                     window.BlockIDEUploadState.move('done', uploadRunId);
@@ -603,6 +724,9 @@ BlocklyDuino.uploadClick = function () {
             }
         })
         .catch(function (err) {
+            if (typeof window.trackGAEvent === 'function') {
+                window.trackGAEvent('upload_result', { success: 'false', board: board, transport: 'web_http', error: 'network' });
+            }
             if (window.BlockIDEUploadState && window.BlockIDEUploadState.move) {
                 window.BlockIDEUploadState.move('error', uploadRunId);
                 window.BlockIDEUploadState.move('idle', uploadRunId);

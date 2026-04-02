@@ -40,7 +40,9 @@
       var t = e && e.target;
       if (!t || !t.closest) return;
       if (t.closest('#side_btn_upload') || t.closest('#btn_flash_local')) {
-        emit('ui_upload_click', {});
+        emit('ui_upload_click', {
+          board: (w.profile && w.profile.defaultBoardKey) || 'unknown'
+        });
       } else if (t.closest('#side_btn_connect_monitor')) {
         emit('ui_serial_toggle_click', {});
       } else if (t.closest('#btn_arduino_board')) {
