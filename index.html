@@ -701,6 +701,13 @@
             <button class="serial-tab-btn" data-tab="serial">Serial</button>
         </div>
         <div id="messagesMonitor" class="serial-monitor active">
+            <div class="messages-monitor-toolbar" id="messages_serial_power_row">
+                <span class="messages-toolbar-label" title="Matches header Connect/Disconnect. After USB flash, use Off then On if serial fails to reopen.">USB serial</span>
+                <button type="button" id="btn_serial_stream_power" class="btn messages-serial-power-btn"
+                    title="Turn USB serial monitor on or off (same as Connect in the header). Use Off→On after upload if you see “port is already open”.">
+                    <span id="serial_stream_power_label">Off</span>
+                </button>
+            </div>
             <pre id="messagesOutput" class="serial-output" data-empty-hint="System messages will appear here."></pre>
         </div>
         <div id="serialMonitor" class="serial-monitor">
@@ -1992,6 +1999,19 @@
                 connectBtn.classList.remove('serial-on', 'serial-off');
                 connectBtn.classList.add(serialConnected ? 'serial-off' : 'serial-on');
                 if (window.syncModalSerialState) window.syncModalSerialState();
+
+                var streamPowerBtn = document.getElementById('btn_serial_stream_power');
+                var streamPowerLbl = document.getElementById('serial_stream_power_label');
+                if (streamPowerBtn && streamPowerLbl) {
+                    streamPowerBtn.disabled = busyAny;
+                    if (uiState === 'connecting' || uiState === 'disconnecting') {
+                        streamPowerLbl.textContent = '…';
+                    } else {
+                        streamPowerLbl.textContent = serialConnected ? 'On' : 'Off';
+                    }
+                    streamPowerBtn.setAttribute('aria-pressed', serialConnected ? 'true' : 'false');
+                    streamPowerBtn.classList.toggle('serial-power-on', serialConnected);
+                }
             }
             updateUiState();
 
@@ -2066,7 +2086,7 @@
             }
 
             // 1. Populate port dropdown (web: your USB via Web Serial — never GET /ports from server)
-            async function updatePorts() {
+            async function updatePorts(preferNoComForWebSerial) {
                 try {
                     if (isElectron) {
                         const result = await window.electronAPI.listPorts();
@@ -2092,7 +2112,9 @@
                             window.blockideCopySelectOptions(portSelect, idePortSelect);
                         }
                     } else {
-                        const prev = portSelect.value || (idePortSelect && idePortSelect.value) || '';
+                        const prev = preferNoComForWebSerial
+                            ? 'no_com'
+                            : (portSelect.value || (idePortSelect && idePortSelect.value) || '');
                         if (typeof window.blockideSyncWebSerialPortDropdowns === 'function') {
                             await window.blockideSyncWebSerialPortDropdowns(portSelect, idePortSelect, prev);
                         } else {
@@ -2119,6 +2141,15 @@
             updatePorts();
             setInterval(updatePorts, 3000);
 
+            (function bindMessagesSerialPowerToggle() {
+                var streamPowerBtn = document.getElementById('btn_serial_stream_power');
+                if (!streamPowerBtn || !connectBtn) return;
+                streamPowerBtn.addEventListener('click', function () {
+                    if (streamPowerBtn.disabled) return;
+                    connectBtn.click();
+                });
+            })();
+
             connectBtn.addEventListener('click', async () => {
                 if (uiState === 'uploading') {
                     addMessage('Upload in progress. Please wait.', 'warning');
@@ -2135,6 +2166,10 @@
                         // Web flow: prompt port selection directly from Connect.
                         if (!isElectron && navigator.serial && typeof window.blockideFillWebSerialSelect === 'function') {
                             try {
+                                addMessage(
+                                    'Choose your USB device in the browser dialog. If you disconnected earlier, the same board may still appear — that is normal; select it again to allow access.',
+                                    'info'
+                                );
                                 await navigator.serial.requestPort();
                                 await updatePorts();
                                 const options = Array.from(portSelect.options || []);
@@ -2208,7 +2243,7 @@
                                     : null;
                             result = { success: true, webSerialClose: closeSummary };
                             try {
-                                await updatePorts();
+                                await updatePorts(true);
                             } catch (eUp) {
                                 console.warn('[Serial] updatePorts after disconnect failed', eUp);
                                 addMessage(
@@ -2245,7 +2280,8 @@
                                 if (ws.hadActivePort && ws.closed && ws.forgetRequested) {
                                     if (ws.forgotten) {
                                         parts.push(
-                                            'USB access was removed for this site — click Connect to pair your device again.'
+                                            'USB access was removed for this site — click Connect to pair your device again. ' +
+                                                'Your board may still appear in the browser list — select it again to allow access.'
                                         );
                                     } else if (ws.forgetSupported) {
                                         var fe = (ws.errors || []).find(function (x) {
@@ -3142,7 +3178,8 @@
                                     addMessage('Serial monitor reopened.', 'info');
                                 } catch (eReopen) {
                                     addMessage(
-                                        'Upload OK — serial monitor did not reopen: ' + (eReopen.message || eReopen),
+                                        'Upload OK — serial monitor did not reopen: ' + (eReopen.message || eReopen) +
+                                            ' In the Messages tab, set USB serial to Off then On (or use header Connect).',
                                         'warning'
                                     );
                                 }
@@ -3239,7 +3276,8 @@
                                     addMessage('Serial monitor reopened.', 'info');
                                 } catch (eReopenUno) {
                                     addMessage(
-                                        'Upload OK — serial monitor did not reopen: ' + (eReopenUno.message || eReopenUno),
+                                        'Upload OK — serial monitor did not reopen: ' + (eReopenUno.message || eReopenUno) +
+                                            ' In the Messages tab, set USB serial to Off then On (or use header Connect).',
                                         'warning'
                                     );
                                 }

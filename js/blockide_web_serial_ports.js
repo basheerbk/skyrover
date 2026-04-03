@@ -85,6 +85,7 @@
         ? 'No device paired — use ＋ Add to pick your board'
         : 'No USB device yet — click Connect and choose your board in the browser dialog';
       selectEl.appendChild(empty);
+      selectEl.value = 'no_com';
       selectEl.disabled = false;
     } else {
       for (var i = 0; i < ports.length; i++) {
@@ -205,6 +206,18 @@
     var port = ports[idx];
     if (!port) {
       throw new Error('That USB device is no longer listed — use ＋ Add again');
+    }
+    // After esptool/avrbro flash the same SerialPort can still be "opened" in the browser even though
+    // our module cleared activePort — close it before open or Chromium throws "The port is already open".
+    if (port.opened === true) {
+      try {
+        await port.close();
+      } catch (eOpenClose) {
+        /* continue; open() below may still work or will throw clearly */
+      }
+      await new Promise(function (r) {
+        setTimeout(r, 120);
+      });
     }
     try {
       await port.open({ baudRate: baudRate || 9600 });
