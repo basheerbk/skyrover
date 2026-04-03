@@ -423,6 +423,12 @@ BlocklyDuino.uploadClick = function () {
         if (window.addNewMessage) addNewMessage("Upload already in progress. Please wait.", "warning");
         return;
     }
+    if (typeof window !== 'undefined' && window.BlockIDEUploadState &&
+        typeof window.BlockIDEUploadState.tryAcquireUploadLock === 'function' &&
+        !window.BlockIDEUploadState.tryAcquireUploadLock()) {
+        if (window.addNewMessage) addNewMessage("Upload already in progress. Please wait.", "warning");
+        return;
+    }
     var uploadRunId = (typeof window !== 'undefined' && window.BlockIDEUploadState &&
         typeof window.BlockIDEUploadState.begin === 'function')
         ? window.BlockIDEUploadState.begin()
@@ -443,12 +449,24 @@ BlocklyDuino.uploadClick = function () {
             : 'arduino:avr:uno');
 
     if (!code || code.trim() === "") {
+        if (window.BlockIDEUploadState && window.BlockIDEUploadState.resetToIdle) {
+            window.BlockIDEUploadState.resetToIdle(uploadRunId);
+        }
+        if (window.BlockIDEUploadState && window.BlockIDEUploadState.releaseUploadLock) {
+            window.BlockIDEUploadState.releaseUploadLock();
+        }
         if (window.addNewMessage) addNewMessage("No code to upload. Please generate code first.", "warning");
         return;
     }
 
     if (window.electronAPI && window.electronAPI.uploadCode) {
         if (!port || port === 'no_com') {
+            if (window.BlockIDEUploadState && window.BlockIDEUploadState.resetToIdle) {
+                window.BlockIDEUploadState.resetToIdle(uploadRunId);
+            }
+            if (window.BlockIDEUploadState && window.BlockIDEUploadState.releaseUploadLock) {
+                window.BlockIDEUploadState.releaseUploadLock();
+            }
             if (window.addNewMessage) addNewMessage("No serial port selected. Please connect your board and select a port.", "warning");
             return;
         }
@@ -492,6 +510,11 @@ BlocklyDuino.uploadClick = function () {
                 }
                 if (window.addNewMessage) addNewMessage("System Error: " + err, "error");
                 console.error("Upload error:", err);
+            })
+            .finally(function () {
+                if (window.BlockIDEUploadState && window.BlockIDEUploadState.releaseUploadLock) {
+                    window.BlockIDEUploadState.releaseUploadLock();
+                }
             });
         return;
     }
@@ -520,6 +543,9 @@ BlocklyDuino.uploadClick = function () {
                 }
                 if (window.BlockIDEUploadState && window.BlockIDEUploadState.move) {
                     window.BlockIDEUploadState.move('idle', uploadRunId);
+                }
+                if (window.BlockIDEUploadState && window.BlockIDEUploadState.releaseUploadLock) {
+                    window.BlockIDEUploadState.releaseUploadLock();
                 }
                 return;
             }
@@ -567,6 +593,10 @@ BlocklyDuino.uploadClick = function () {
                         window.BlockIDEUploadState.move('idle', uploadRunId);
                     }
                     if (window.addNewMessage) addNewMessage('Upload failed: ' + (err.message || err), 'error');
+                } finally {
+                    if (window.BlockIDEUploadState && window.BlockIDEUploadState.releaseUploadLock) {
+                        window.BlockIDEUploadState.releaseUploadLock();
+                    }
                 }
             })();
         })();
@@ -580,6 +610,12 @@ BlocklyDuino.uploadClick = function () {
                     : 'Web Serial not available in this browser/device. Use desktop Chrome or Edge.',
                 'error'
             );
+        }
+        if (window.BlockIDEUploadState && window.BlockIDEUploadState.resetToIdle) {
+            window.BlockIDEUploadState.resetToIdle(uploadRunId);
+        }
+        if (window.BlockIDEUploadState && window.BlockIDEUploadState.releaseUploadLock) {
+            window.BlockIDEUploadState.releaseUploadLock();
         }
         return;
     }
@@ -606,6 +642,9 @@ BlocklyDuino.uploadClick = function () {
                 }
                 if (window.BlockIDEUploadState && window.BlockIDEUploadState.move) {
                     window.BlockIDEUploadState.move('idle', uploadRunId);
+                }
+                if (window.BlockIDEUploadState && window.BlockIDEUploadState.releaseUploadLock) {
+                    window.BlockIDEUploadState.releaseUploadLock();
                 }
                 return;
             }
@@ -653,6 +692,10 @@ BlocklyDuino.uploadClick = function () {
                         window.BlockIDEUploadState.move('idle', uploadRunId);
                     }
                     if (window.addNewMessage) addNewMessage('Upload failed: ' + (err.message || err), 'error');
+                } finally {
+                    if (window.BlockIDEUploadState && window.BlockIDEUploadState.releaseUploadLock) {
+                        window.BlockIDEUploadState.releaseUploadLock();
+                    }
                 }
             })();
         })();
@@ -666,6 +709,12 @@ BlocklyDuino.uploadClick = function () {
                     : 'Web Serial not available in this browser/device. Use desktop Chrome or Edge.',
                 'error'
             );
+        }
+        if (window.BlockIDEUploadState && window.BlockIDEUploadState.resetToIdle) {
+            window.BlockIDEUploadState.resetToIdle(uploadRunId);
+        }
+        if (window.BlockIDEUploadState && window.BlockIDEUploadState.releaseUploadLock) {
+            window.BlockIDEUploadState.releaseUploadLock();
         }
         return;
     }
@@ -681,10 +730,22 @@ BlocklyDuino.uploadClick = function () {
                 nanoMega ? 'error' : 'warning'
             );
         }
+        if (window.BlockIDEUploadState && window.BlockIDEUploadState.resetToIdle) {
+            window.BlockIDEUploadState.resetToIdle(uploadRunId);
+        }
+        if (window.BlockIDEUploadState && window.BlockIDEUploadState.releaseUploadLock) {
+            window.BlockIDEUploadState.releaseUploadLock();
+        }
         return;
     }
 
     if (!port || port === 'no_com' || port === '__add_usb_serial__') {
+        if (window.BlockIDEUploadState && window.BlockIDEUploadState.resetToIdle) {
+            window.BlockIDEUploadState.resetToIdle(uploadRunId);
+        }
+        if (window.BlockIDEUploadState && window.BlockIDEUploadState.releaseUploadLock) {
+            window.BlockIDEUploadState.releaseUploadLock();
+        }
         if (window.addNewMessage) addNewMessage("No serial port selected. Please connect your board and select a port.", "warning");
         return;
     }
@@ -733,6 +794,11 @@ BlocklyDuino.uploadClick = function () {
             }
             if (window.addNewMessage) addNewMessage("Upload request failed: " + err, "error");
             console.error("Upload error:", err);
+        })
+        .finally(function () {
+            if (window.BlockIDEUploadState && window.BlockIDEUploadState.releaseUploadLock) {
+                window.BlockIDEUploadState.releaseUploadLock();
+            }
         });
 };
 

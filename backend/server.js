@@ -26,6 +26,16 @@ const AUDIT_INCLUDE_CODE =
   process.env.BLOCKIDE_AUDIT_INCLUDE_CODE === '1' ||
   process.env.BLOCKIDE_AUDIT_INCLUDE_CODE === 'true';
 
+/** Quote a single CLI argument for Windows cmd.exe / POSIX sh (double-quote + escape). */
+function safeCliArg(value) {
+  const s = String(value);
+  if (!/["\s&|<>^%;`$]/.test(s)) return s;
+  if (process.platform === 'win32') {
+    return '"' + s.replace(/"/g, '""') + '"';
+  }
+  return "'" + s.replace(/'/g, "'\\''") + "'";
+}
+
 function truncate(str, max) {
   if (str == null) return null;
   const s = String(str);
@@ -671,11 +681,12 @@ app.post('/compile', async (req, res) => {
     });
   }
 
+  let tempDir = null;
   try {
     // Install required libraries
     await installRequiredLibrariesForCode(code);
 
-    const tempDir = await fs.mkdtemp(path.join(require('os').tmpdir(), 'arduino-'));
+    tempDir = await fs.mkdtemp(path.join(require('os').tmpdir(), 'arduino-'));
     const sketchName = path.basename(tempDir);
     const inoFile = path.join(tempDir, `${sketchName}.ino`);
     await fs.writeFile(inoFile, code, 'utf8');
@@ -686,9 +697,9 @@ app.post('/compile', async (req, res) => {
     let compileCommand;
     if (returnBinaries) {
       await fs.mkdir(buildDir, { recursive: true });
-      compileCommand = `"${cliPath}" compile --fqbn ${boardFQBN} "${tempDir}" --output-dir "${buildDir}"`;
+      compileCommand = `"${cliPath}" compile --fqbn ${safeCliArg(boardFQBN)} "${tempDir}" --output-dir "${buildDir}"`;
     } else {
-      compileCommand = `"${cliPath}" compile --fqbn ${boardFQBN} "${tempDir}"`;
+      compileCommand = `"${cliPath}" compile --fqbn ${safeCliArg(boardFQBN)} "${tempDir}"`;
     }
 
     console.log(`[COMPILE] Compiling for ${boardFQBN}... returnBinaries=${!!returnBinaries}`);
@@ -809,6 +820,9 @@ app.post('/compile', async (req, res) => {
     }
   } catch (error) {
     console.error('[COMPILE] Error:', error);
+    if (tempDir) {
+      await fs.rm(tempDir, { recursive: true, force: true }).catch(() => {});
+    }
     await logAudit({
       event: 'compile',
       user: resolveAuditUser(req),
@@ -902,13 +916,14 @@ app.post('/upload', async (req, res) => {
   const portLabel = truncate(String(port), 128);
 
   console.log(`[UPLOAD] Using FQBN: ${boardFQBN}, Port: ${port}`);
-  
+
+  let tempDir = null;
   try {
     // Install required libraries
     await installRequiredLibrariesForCode(code);
-    
+
     // Create temporary directory (same structure as Python version)
-    const tempDir = await fs.mkdtemp(path.join(require('os').tmpdir(), 'arduino-'));
+    tempDir = await fs.mkdtemp(path.join(require('os').tmpdir(), 'arduino-'));
     const sketchName = path.basename(tempDir);
     
     // Arduino CLI expects: tempDir/sketchName.ino (file directly in tempDir, NOT in subfolder)
@@ -919,13 +934,13 @@ app.post('/upload', async (req, res) => {
     const cliPath = getArduinoCliPath();
     
     // Step 1: Compile first (use tempDir - Arduino CLI expects the .ino file directly in this directory)
-    const compileCommand = `"${cliPath}" compile --fqbn ${boardFQBN} "${tempDir}"`;
+    const compileCommand = `"${cliPath}" compile --fqbn ${safeCliArg(boardFQBN)} "${tempDir}"`;
     console.log(`[UPLOAD] Compiling for ${boardFQBN}...`);
-    
+
     try {
-      const compileResult = await execAsync(compileCommand, { 
-        timeout: 60000,
-        cwd: tempDir 
+      const compileResult = await execAsync(compileCommand, {
+        timeout: 120000,
+        cwd: tempDir,
       });
       console.log('[UPLOAD] Compile stdout:', compileResult.stdout);
       if (compileResult.stderr) {
@@ -958,7 +973,7 @@ app.post('/upload', async (req, res) => {
     }
     
     // Step 2: Upload (use tempDir - Arduino CLI expects the .ino file directly in this directory)
-    let uploadCommand = `"${cliPath}" upload -p ${port} --fqbn ${boardFQBN} "${tempDir}"`;
+    let uploadCommand = `"${cliPath}" upload -p ${safeCliArg(port)} --fqbn ${safeCliArg(boardFQBN)} "${tempDir}"`;
     
     // Add special flags for ESP32-S3 boards (same as Python version)
     if (boardFQBN === 'esp32:esp32:xiaoesp32s3' || boardFQBN === 'esp32:esp32:esp32s3') {
@@ -1060,6 +1075,9 @@ app.post('/upload', async (req, res) => {
     }
   } catch (error) {
     console.error('[UPLOAD] Exception during upload:', error);
+    if (tempDir) {
+      await fs.rm(tempDir, { recursive: true, force: true }).catch(() => {});
+    }
     await logAudit({
       event: 'upload',
       user: resolveAuditUser(req),

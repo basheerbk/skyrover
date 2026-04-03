@@ -83,7 +83,14 @@
       fqbn = 'esp32:esp32:esp32';
     }
 
-    var boardId = fqbnToBoardId[fqbn] || 'skyrover';
+    var mappedId = fqbnToBoardId[fqbn];
+    if (!mappedId && fqbn && typeof console !== 'undefined' && console.warn) {
+      console.warn(
+        '[Board profile] Unknown FQBN — UI defaults to ESP32 profile; verify board pins:',
+        fqbn
+      );
+    }
+    var boardId = mappedId || 'skyrover';
     if (boardId && typeof profile !== 'undefined') {
       profile.defaultBoardKey = boardId;
       profile.defaultBoard = profile[boardId];

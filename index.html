@@ -2943,12 +2943,20 @@
                     addMessage('Upload already in progress. Please wait…', 'warning');
                     return;
                 }
-                setUiState('uploading');
-                var thisRunId = (window.BlockIDEUploadState && window.BlockIDEUploadState.begin)
-                    ? window.BlockIDEUploadState.begin()
-                    : Date.now();
+                if (window.BlockIDEUploadState && typeof window.BlockIDEUploadState.tryAcquireUploadLock === 'function') {
+                    if (!window.BlockIDEUploadState.tryAcquireUploadLock()) {
+                        addMessage('Upload already in progress. Please wait…', 'warning');
+                        return;
+                    }
+                }
+                (async function sidePanelUploadFlow() {
+                    try {
+                        setUiState('uploading');
+                        var thisRunId = (window.BlockIDEUploadState && window.BlockIDEUploadState.begin)
+                            ? window.BlockIDEUploadState.begin()
+                            : Date.now();
 
-                // Web ESP/Uno: use paired USB from Connect or port dropdown (same index in getPorts()); no Upload-time requestPort.
+                        // Web ESP/Uno: use paired USB from Connect or port dropdown (same index in getPorts()); no Upload-time requestPort.
                 var boardEarly = typeof window.resolveBoardFqbnFromProfile === 'function'
                     ? window.resolveBoardFqbnFromProfile()
                     : 'arduino:avr:uno';
@@ -3000,6 +3008,13 @@
                     function finishUploadUiState() {
                         setUiState(serialConnected ? 'connected' : 'idle');
                     }
+                    function abortUploadFlow(msg, level) {
+                        if (msg) addMessage(msg, level || 'error');
+                        if (window.BlockIDEUploadState && window.BlockIDEUploadState.resetToIdle) {
+                            window.BlockIDEUploadState.resetToIdle(thisRunId);
+                        }
+                        finishUploadUiState();
+                    }
                     if (window.BlockIDEUploadState && window.BlockIDEUploadState.currentRunId &&
                         thisRunId !== window.BlockIDEUploadState.currentRunId()) return;
                     // Get code from preview - try data attribute first (raw code), then textContent
@@ -3045,8 +3060,7 @@
                         (codeTrimmed === 'void setup() {\n}\n\nvoid loop() {\n}') ||
                         (codeTrimmed === 'void setup() {\n}\n\nvoid loop() {\n  \n}')) {
                         console.error('[UPLOAD] Code check failed. Code:', codeTrimmed.substring(0, 200));
-                        addMessage('Upload failed: No code to upload. Please check the Arduino code preview.', 'error');
-                        finishUploadUiState();
+                        abortUploadFlow('Upload failed: No code to upload. Please check the Arduino code preview.');
                         return;
                     }
 
@@ -3054,23 +3068,19 @@
                     var useWebEspChip = !isElectron && (board.indexOf('esp32:') === 0 || board.indexOf('esp8266:') === 0);
                     if (useWebEspChip) {
                         if (!navigator.serial) {
-                            addMessage(
+                            abortUploadFlow(
                                 typeof window.isSecureContext !== 'undefined' && !window.isSecureContext
                                     ? 'Web Serial is disabled on http:// with a network address. Use HTTPS, or SSH -L 5005:127.0.0.1:5005 … then http://localhost:5005 (see docs/deploy-oracle.md).'
-                                    : 'Web Serial not available — use Chrome or Edge (latest).',
-                                'error'
+                                    : 'Web Serial not available — use Chrome or Edge (latest).'
                             );
-                            finishUploadUiState();
                             return;
                         }
                         if (typeof window.BlockIDE === 'undefined' || typeof window.BlockIDE.compileAndFlashEsp32Web !== 'function') {
-                            addMessage('ESP web flash bundle missing. Run npm run build:bundle and reload.', 'error');
-                            finishUploadUiState();
+                            abortUploadFlow('ESP web flash bundle missing. Run npm run build:bundle and reload.');
                             return;
                         }
                         if (typeof window.BlockIDE.compileEsp32ForWeb !== 'function') {
-                            addMessage('ESP compile helper missing from bundle. Run npm run build:bundle and reload.', 'error');
-                            finishUploadUiState();
+                            abortUploadFlow('ESP compile helper missing from bundle. Run npm run build:bundle and reload.');
                             return;
                         }
                         if (window.BlockIDEUploadState && window.BlockIDEUploadState.move) {
@@ -3094,6 +3104,9 @@
                                         addMessage('Compilation succeeded. Turn Serial off, then click Upload once to pick USB and flash.', 'success');
                                     } catch (compileOnlyErr) {
                                         addMessage('Compile failed: ' + (compileOnlyErr && compileOnlyErr.message ? compileOnlyErr.message : compileOnlyErr), 'error');
+                                    }
+                                    if (window.BlockIDEUploadState && window.BlockIDEUploadState.resetToIdle) {
+                                        window.BlockIDEUploadState.resetToIdle(thisRunId);
                                     }
                                     finishUploadUiState();
                                     return;
@@ -3152,23 +3165,19 @@
                     var useWebUnoChip = !isElectron && board === 'arduino:avr:uno';
                     if (useWebUnoChip) {
                         if (!navigator.serial) {
-                            addMessage(
+                            abortUploadFlow(
                                 typeof window.isSecureContext !== 'undefined' && !window.isSecureContext
                                     ? 'Web Serial is disabled on http:// with a network address. Use HTTPS, or SSH -L 5005:127.0.0.1:5005 … then http://localhost:5005 (see docs/deploy-oracle.md).'
-                                    : 'Web Serial not available — use Chrome or Edge (latest).',
-                                'error'
+                                    : 'Web Serial not available — use Chrome or Edge (latest).'
                             );
-                            finishUploadUiState();
                             return;
                         }
                         if (typeof window.BlockIDE === 'undefined' || typeof window.BlockIDE.compileAndFlashUnoWeb !== 'function') {
-                            addMessage('Uno web flash bundle missing. Run npm run build:bundle and reload.', 'error');
-                            finishUploadUiState();
+                            abortUploadFlow('Uno web flash bundle missing. Run npm run build:bundle and reload.');
                             return;
                         }
                         if (typeof window.BlockIDE.compileUnoForWeb !== 'function') {
-                            addMessage('Uno compile helper missing from bundle. Run npm run build:bundle and reload.', 'error');
-                            finishUploadUiState();
+                            abortUploadFlow('Uno compile helper missing from bundle. Run npm run build:bundle and reload.');
                             return;
                         }
                         if (window.BlockIDEUploadState && window.BlockIDEUploadState.move) {
@@ -3192,6 +3201,9 @@
                                         addMessage('Compilation succeeded. Turn Serial off, then click Upload once to pick USB and upload.', 'success');
                                     } catch (compileOnlyErr) {
                                         addMessage('Compile failed: ' + (compileOnlyErr && compileOnlyErr.message ? compileOnlyErr.message : compileOnlyErr), 'error');
+                                    }
+                                    if (window.BlockIDEUploadState && window.BlockIDEUploadState.resetToIdle) {
+                                        window.BlockIDEUploadState.resetToIdle(thisRunId);
                                     }
                                     finishUploadUiState();
                                     return;
@@ -3248,17 +3260,17 @@
 
                     const port = portSelect.value;
                     if (!port || port === 'no_com' || port === '__add_usb_serial__') {
-                        addMessage('Upload failed: Choose a USB serial device (＋ Add) or use ESP32/ESP8266 / Arduino Uno web upload.', 'error');
+                        abortUploadFlow('Upload failed: Choose a USB serial device (＋ Add) or use ESP32/ESP8266 / Arduino Uno web upload.');
                         return;
                     }
                     if (!isElectron && window.blockideIsWebSerialPortValue && window.blockideIsWebSerialPortValue(port)) {
                         var nanoMegaWeb =
                             board.indexOf('arduino:avr:nano') === 0 || board.indexOf('arduino:avr:mega') === 0;
-                        addMessage(
+                        abortUploadFlow(
                             nanoMegaWeb
                                 ? 'Nano/Mega in the browser: the cloud server cannot use your PC’s USB port. Use the desktop app, run this IDE on the same machine as the board with Arduino CLI, or use Arduino IDE. (ESP32/ESP8266/Uno support browser USB upload from this site.)'
                                 : 'Upload failed: Browser USB ports cannot be sent to the cloud server. Use ESP32/ESP8266 or Arduino Uno web upload, or Arduino IDE for other boards.',
-                            'error'
+                            nanoMegaWeb ? 'error' : 'warning'
                         );
                         return;
                     }
@@ -3312,34 +3324,55 @@
                     }
                 }
 
-                if (serialConnected) {
-                    addMessage('Closing serial port for upload...', 'info');
-                    (async function () {
-                        try {
-                            var result;
-                            if (isElectron) {
-                                result = await window.electronAPI.closeSerial();
-                            } else {
-                                await window.blockideBrowserSerialClose();
-                                result = { success: true };
-                            }
-
-                            if (result && result.success) {
-                                serialConnected = false;
-                                connectedPort = null;
-                                setTimeout(doUpload, 1000);
-                            } else {
+                        if (serialConnected) {
+                            addMessage('Closing serial port for upload...', 'info');
+                            try {
+                                var closeResult;
+                                if (isElectron) {
+                                    closeResult = await window.electronAPI.closeSerial();
+                                } else if (typeof window.blockideBrowserSerialClose === 'function') {
+                                    var closeSm = await window.blockideBrowserSerialClose();
+                                    var portClosedOk = !closeSm.hadActivePort || closeSm.closed;
+                                    closeResult = { success: portClosedOk };
+                                    if (!portClosedOk) {
+                                        addMessage(
+                                            'Serial port did not close cleanly. Upload aborted — try Disconnect, then Upload again.',
+                                            'error'
+                                        );
+                                    }
+                                } else {
+                                    closeResult = { success: true };
+                                }
+                                if (closeResult && closeResult.success) {
+                                    serialConnected = false;
+                                    connectedPort = null;
+                                    await new Promise(function (r) { setTimeout(r, 1000); });
+                                    await doUpload();
+                                } else {
+                                    if (isElectron) {
+                                        addMessage('Could not disconnect serial monitor. Upload aborted.', 'error');
+                                    }
+                                    if (window.BlockIDEUploadState && window.BlockIDEUploadState.resetToIdle) {
+                                        window.BlockIDEUploadState.resetToIdle(thisRunId);
+                                    }
+                                    setUiState(serialConnected ? 'connected' : 'idle');
+                                }
+                            } catch (err) {
                                 addMessage('Could not disconnect serial monitor. Upload aborted.', 'error');
+                                if (window.BlockIDEUploadState && window.BlockIDEUploadState.resetToIdle) {
+                                    window.BlockIDEUploadState.resetToIdle(thisRunId);
+                                }
                                 setUiState(serialConnected ? 'connected' : 'idle');
                             }
-                        } catch (err) {
-                            addMessage('Could not disconnect serial monitor. Upload aborted.', 'error');
-                            setUiState(serialConnected ? 'connected' : 'idle');
+                        } else {
+                            await doUpload();
                         }
-                    })();
-                } else {
-                    doUpload();
-                }
+                    } finally {
+                        if (window.BlockIDEUploadState && typeof window.BlockIDEUploadState.releaseUploadLock === 'function') {
+                            window.BlockIDEUploadState.releaseUploadLock();
+                        }
+                    }
+                })();
             });
             serialSendBtn.addEventListener('click', async function () {
                 const val = serialInput.value;

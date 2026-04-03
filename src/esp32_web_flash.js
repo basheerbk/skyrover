@@ -99,10 +99,17 @@ export async function flashEsp32WithWebSerial(serialPort, compileResult, options
   await loader.main();
 
   const fileArray = compileResult.artifacts
-    .map((a) => ({
-      data: typeof a.dataBase64 === 'string' ? b64ToUint8Array(a.dataBase64) : a.data,
-      address: a.address,
-    }))
+    .map((a, i) => {
+      if (typeof a.dataBase64 !== 'string' || !a.dataBase64.length) {
+        throw new Error(
+          `Firmware artifact #${i + 1} is missing dataBase64 (server build output incomplete).`
+        );
+      }
+      return {
+        data: b64ToUint8Array(a.dataBase64),
+        address: a.address,
+      };
+    })
     .sort((x, y) => x.address - y.address);
 
   await loader.writeFlash({
