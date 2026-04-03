@@ -701,13 +701,6 @@
             <button class="serial-tab-btn" data-tab="serial">Serial</button>
         </div>
         <div id="messagesMonitor" class="serial-monitor active">
-            <div class="messages-monitor-toolbar" id="messages_serial_power_row">
-                <span class="messages-toolbar-label" title="Matches header Connect/Disconnect. After USB flash, use Off then On if serial fails to reopen.">USB serial</span>
-                <button type="button" id="btn_serial_stream_power" class="btn messages-serial-power-btn"
-                    title="Turn USB serial monitor on or off (same as Connect in the header). Use Off→On after upload if you see “port is already open”.">
-                    <span id="serial_stream_power_label">Off</span>
-                </button>
-            </div>
             <pre id="messagesOutput" class="serial-output" data-empty-hint="System messages will appear here."></pre>
         </div>
         <div id="serialMonitor" class="serial-monitor">
@@ -726,6 +719,11 @@
                     <button id="serialExpandBtn" class="btn serial-btn-send" type="button" data-toggle="modal"
                         data-target="#serialExpandModal">
                         <i class="bi bi-arrows-fullscreen"></i>
+                    </button>
+                    <button type="button" id="btn_serial_incoming_visible" class="btn serial-btn-send serial-incoming-toggle"
+                        aria-pressed="true"
+                        title="When off, new incoming serial data is hidden in the output. USB connection is unchanged; use header Disconnect to close the port.">
+                        <i class="bi bi-eye" id="serial_incoming_visible_icon" aria-hidden="true"></i>
                     </button>
                 </div>
                 <div class="serial-monitor-bottom">
@@ -1952,6 +1950,8 @@
             const serialInput = document.getElementById('serialInput');
             const serialSendBtn = document.getElementById('serialSendBtn');
             const baudRateSelect = document.getElementById('baudRateSelect');
+            const btnSerialIncomingVisible = document.getElementById('btn_serial_incoming_visible');
+            let serialIncomingDisplayEnabled = true;
             let serialConnected = false;
 
             // Verify Run button exists
@@ -1999,21 +1999,45 @@
                 connectBtn.classList.remove('serial-on', 'serial-off');
                 connectBtn.classList.add(serialConnected ? 'serial-off' : 'serial-on');
                 if (window.syncModalSerialState) window.syncModalSerialState();
-
-                var streamPowerBtn = document.getElementById('btn_serial_stream_power');
-                var streamPowerLbl = document.getElementById('serial_stream_power_label');
-                if (streamPowerBtn && streamPowerLbl) {
-                    streamPowerBtn.disabled = busyAny;
-                    if (uiState === 'connecting' || uiState === 'disconnecting') {
-                        streamPowerLbl.textContent = '…';
-                    } else {
-                        streamPowerLbl.textContent = serialConnected ? 'On' : 'Off';
-                    }
-                    streamPowerBtn.setAttribute('aria-pressed', serialConnected ? 'true' : 'false');
-                    streamPowerBtn.classList.toggle('serial-power-on', serialConnected);
-                }
             }
             updateUiState();
+
+            function appendSerialMonitorIncoming(fragment, appendNewline) {
+                if (!serialIncomingDisplayEnabled) return;
+                var text = appendNewline ? fragment + '\n' : fragment;
+                if (serialOutput) {
+                    serialOutput.textContent += text;
+                    serialOutput.scrollTop = serialOutput.scrollHeight;
+                }
+                if (modalOutput) {
+                    modalOutput.textContent += text;
+                    modalOutput.scrollTop = modalOutput.scrollHeight;
+                }
+            }
+
+            function updateSerialIncomingToggleUi() {
+                if (!btnSerialIncomingVisible) return;
+                var icon = document.getElementById('serial_incoming_visible_icon');
+                btnSerialIncomingVisible.setAttribute('aria-pressed', serialIncomingDisplayEnabled ? 'true' : 'false');
+                btnSerialIncomingVisible.setAttribute(
+                    'aria-label',
+                    serialIncomingDisplayEnabled
+                        ? 'Incoming serial shown; click to hide new data in the output'
+                        : 'Incoming serial hidden; click to show new data in the output'
+                );
+                if (icon) {
+                    icon.className = serialIncomingDisplayEnabled ? 'bi bi-eye' : 'bi bi-eye-slash';
+                }
+                btnSerialIncomingVisible.classList.toggle('serial-incoming-off', !serialIncomingDisplayEnabled);
+            }
+
+            if (btnSerialIncomingVisible) {
+                btnSerialIncomingVisible.addEventListener('click', function () {
+                    serialIncomingDisplayEnabled = !serialIncomingDisplayEnabled;
+                    updateSerialIncomingToggleUi();
+                });
+                updateSerialIncomingToggleUi();
+            }
 
             // Setup serial data listeners
             if (isElectron) {
@@ -2026,14 +2050,7 @@
                         return;
                     }
 
-                    if (serialOutput) {
-                        serialOutput.textContent += data.data + '\n';
-                        serialOutput.scrollTop = serialOutput.scrollHeight;
-                    }
-                    if (modalOutput) {
-                        modalOutput.textContent += data.data + '\n';
-                        modalOutput.scrollTop = modalOutput.scrollHeight;
-                    }
+                    appendSerialMonitorIncoming(data.data, true);
                 });
 
                 window.electronAPI.onSerialError((data) => {
@@ -2049,14 +2066,7 @@
 
                 if (socket) {
                     socket.on('serial_data', function (data) {
-                        if (serialOutput) {
-                            serialOutput.textContent += data.data + '\n';
-                            serialOutput.scrollTop = serialOutput.scrollHeight;
-                        }
-                        if (modalOutput) {
-                            modalOutput.textContent += data.data + '\n';
-                            modalOutput.scrollTop = modalOutput.scrollHeight;
-                        }
+                        appendSerialMonitorIncoming(data.data, true);
                     });
 
                     socket.on('disconnect', function () {
@@ -2068,14 +2078,7 @@
             }
 
             function appendSerialMonitorChunk(chunk) {
-                if (serialOutput) {
-                    serialOutput.textContent += chunk;
-                    serialOutput.scrollTop = serialOutput.scrollHeight;
-                }
-                if (modalOutput) {
-                    modalOutput.textContent += chunk;
-                    modalOutput.scrollTop = modalOutput.scrollHeight;
-                }
+                appendSerialMonitorIncoming(chunk, false);
             }
 
             function mirrorSerialPortToOther(fromEl, toEl) {
@@ -2140,15 +2143,6 @@
             }
             updatePorts();
             setInterval(updatePorts, 3000);
-
-            (function bindMessagesSerialPowerToggle() {
-                var streamPowerBtn = document.getElementById('btn_serial_stream_power');
-                if (!streamPowerBtn || !connectBtn) return;
-                streamPowerBtn.addEventListener('click', function () {
-                    if (streamPowerBtn.disabled) return;
-                    connectBtn.click();
-                });
-            })();
 
             connectBtn.addEventListener('click', async () => {
                 if (uiState === 'uploading') {
@@ -3179,7 +3173,7 @@
                                 } catch (eReopen) {
                                     addMessage(
                                         'Upload OK — serial monitor did not reopen: ' + (eReopen.message || eReopen) +
-                                            ' In the Messages tab, set USB serial to Off then On (or use header Connect).',
+                                            ' Use header Disconnect then Connect if serial fails to reopen.',
                                         'warning'
                                     );
                                 }
@@ -3277,7 +3271,7 @@
                                 } catch (eReopenUno) {
                                     addMessage(
                                         'Upload OK — serial monitor did not reopen: ' + (eReopenUno.message || eReopenUno) +
-                                            ' In the Messages tab, set USB serial to Off then On (or use header Connect).',
+                                            ' Use header Disconnect then Connect if serial fails to reopen.',
                                         'warning'
                                     );
                                 }
