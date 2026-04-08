@@ -47,12 +47,18 @@ sudo tar xzf /tmp/arduino-cli.tar.gz -C /usr/local/bin arduino-cli
 arduino-cli version
 ```
 
-Configure and install ESP32:
+Configure cores (run once; use the **same Linux user** that runs the app — e.g. `skyrover` — so `arduino-cli` sees them):
 
 ```bash
 arduino-cli config init
 arduino-cli core update-index
 arduino-cli core install esp32:esp32
+```
+
+**Arduino Uno / Nano / Mega (browser or server upload):** the `arduino:avr` platform must be installed or you will see *Platform 'arduino:avr' not found*:
+
+```bash
+arduino-cli core install arduino:avr
 ```
 
 (Optional) Libraries you need:
