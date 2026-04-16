@@ -56,6 +56,7 @@ try {
 import { Arduino }         from './arduino_gen.js';
 import './compat_shim.js';
 import './toolbox_category.js';
+import './blocks/arduino_functions.js';
 
 // ── Block Definitions ────────────────────────────────────────────────────────
 import './blocks/Blockly_logic.js';
@@ -67,7 +68,6 @@ import './blocks/blockly_array_extra.js';
 import './blocks/BlocklyArduino_logic.js';
 import './blocks/BlocklyArduino_loops.js';
 import './blocks/BlocklyArduino_math.js';
-import './blocks/BlocklyArduino_procedures.js';
 import './blocks/BlocklyArduino_text.js';
 import './blocks/arduino_base_arduino_base.js';
 import './blocks/arduino_base_arduino_conversion.js';
@@ -109,14 +109,14 @@ import { registerFieldProtractor } from './fields/field_protractor.js';
 registerFieldProtractor();
 import './blocks/basic_kit.js';
 
-// ── Core Blockly block generators (logic, loops, math, text, variables, procedures, arrays) ──
+// ── Core Blockly block generators (logic, loops, math, text, variables, arrays) ──
 import './generators/blockly_logic.js';
 import './generators/blockly_loops.js';
 import './generators/blockly_math.js';
 import './generators/blockly_text.js';
-import './generators/blockly_procedures.js';
 import './generators/blockly_variables.js';
 import './generators/blockly_array.js';
+import './generators/arduino_functions.js';
 
 // ── Code Generators ──────────────────────────────────────────────────────────
 import './generators/arduino_base.js';

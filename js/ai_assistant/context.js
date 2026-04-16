@@ -122,9 +122,11 @@
     SSD1306_invertDisplay: 'OLED invert',
     SSD1306_startscroll: 'OLED scroll',
     SSD1306_stopscroll: 'OLED stop scroll',
-    procedures_defnoreturn: 'Custom block (no return)',
-    procedures_defreturn: 'Custom block (return value)',
-    procedures_callnoreturn: 'Run custom block',
+    arduino_func_define_void: 'Define void function (C)',
+    arduino_func_define_return: 'Define function with return type',
+    arduino_func_return: 'Return value from function',
+    arduino_func_call_void: 'Run my helper (void)',
+    arduino_func_call_return: 'Get value from helper',
     time_delay: 'Wait (delay)',
     time_millis: 'Milliseconds'
   };

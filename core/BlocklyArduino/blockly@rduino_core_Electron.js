@@ -102,6 +102,14 @@ BlocklyDuino.workspaceToCode = function (workspace) {
         return '';
     }
 
+    if (typeof window !== 'undefined' && typeof window.injectArduinoFunctionPrototypes === 'function') {
+        try {
+            window.injectArduinoFunctionPrototypes(workspace);
+        } catch (e) {
+            console.warn('[CODE_GEN] injectArduinoFunctionPrototypes failed:', e);
+        }
+    }
+
     // Check if blockToCode exists
     if (!Blockly.Arduino.blockToCode) {
         console.error('[CODE_GEN] Blockly.Arduino.blockToCode not available!');
@@ -111,11 +119,6 @@ BlocklyDuino.workspaceToCode = function (workspace) {
     var code = [];
     var topBlocks = workspace.getTopBlocks(true);
     var ignoredBlocks = []; // Track blocks that were ignored (outside setup/loop)
-
-    // Helper: is this block a function definition?
-    function isFunctionDefinition(block) {
-        return block.type === 'procedures_defnoreturn' || block.type === 'procedures_defreturn';
-    }
 
     // Helper: is this block a root block (setup/loop)?
     function isRootBlock(block) {
@@ -160,15 +163,22 @@ BlocklyDuino.workspaceToCode = function (workspace) {
         );
     }
 
+    function isArduinoUserFunctionDefinition(block) {
+        return (
+            block.type === 'arduino_func_define_void' ||
+            block.type === 'arduino_func_define_return'
+        );
+    }
+
     // Process all top-level blocks
     for (var i = 0; i < topBlocks.length; i++) {
         var block = topBlocks[i];
         if (!block || !block.type) continue;
 
         // Determine if this block should generate code
-        var isAllowed = isFunctionDefinition(block) ||
-            isConnectedToRoot(block) ||
-            isBlinkBotRuntimeBlock(block);
+        var isAllowed = isConnectedToRoot(block) ||
+            isBlinkBotRuntimeBlock(block) ||
+            isArduinoUserFunctionDefinition(block);
 
         // Process if it's allowed (function definition, root block, connected to root, or Blink Bot runtime)
         if (isAllowed) {
@@ -1309,9 +1319,9 @@ BlocklyDuino.openConfigToolbox = function () {
                   (sessionStorage.getItem('toolboxids') || '').trim() ||
                   ($('#defaultCategories').html() || '').trim().replace(/\s+/g, '');
     } else {
-        // Beginner mode: all beginner categories are active.
-        loadIds = ($('#defaultCategories').html() || '').trim().replace(/\s+/g, '') ||
-                  (sessionStorage.getItem('toolboxids') || '').trim();
+        // Beginner mode: respect saved selection; fall back to defaults on first open.
+        loadIds = (sessionStorage.getItem('toolboxids') || '').trim() ||
+                  ($('#defaultCategories').html() || '').trim().replace(/\s+/g, '');
     }
     if (!loadIds) loadIds = '';
 
@@ -1331,15 +1341,21 @@ BlocklyDuino.openConfigToolbox = function () {
         "CAT_ARRAY":            { group: "Code",    color: "#4CBFE6", desc: "Lists & Arrays",         svg: '<svg viewBox="0 0 16 16" ' + _S + ' stroke-width="1.6"><rect x="1" y="4" width="4" height="4" rx="1"/><rect x="6" y="4" width="4" height="4" rx="1"/><rect x="11" y="4" width="4" height="4" rx="1"/><path d="M3 8v4M8 8v4M13 8v4M3 12h10"/></svg>' },
         "CAT_TEXT":             { group: "Code",    color: "#9966FF", desc: "String & character text", svg: '<svg viewBox="0 0 16 16" ' + _S + ' stroke-width="1.65" stroke-linejoin="round"><path d="M4 13L8 3.5L12 13"/><path d="M5.5 9h5"/></svg>' },
         "CAT_VARIABLES":        { group: "Code",    color: "#FF8C1A", desc: "Store & use values",     svg: '<svg viewBox="0 0 16 16" ' + _S + ' stroke-width="1.6"><rect x="2" y="2" width="12" height="12" rx="2"/><path d="M5 5l6 6M11 5l-6 6"/></svg>' },
-        "CAT_FUNCTIONS":        { group: "Code",    color: "#FF6680", desc: "Create reusable blocks", svg: '<svg viewBox="0 0 16 16" ' + _S + ' stroke-width="1.6"><path d="M2 5h4V3.5C6 2.7 6.7 2 7.5 2S9 2.7 9 3.5V5h3a1 1 0 0 1 1 1v2.5H11.5C10.7 8.5 10 9.2 10 10s.7 1.5 1.5 1.5H13V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1z"/></svg>' },
+        "CAT_ARDUINO_FUNCTIONS": { group: "Code",  color: "#FF6680", desc: "C-style void and typed functions", svg: '<svg viewBox="0 0 16 16" ' + _S + ' stroke-width="1.6"><path d="M2 5h4V3.5C6 2.7 6.7 2 7.5 2S9 2.7 9 3.5V5h3a1 1 0 0 1 1 1v2.5H11.5C10.7 8.5 10 9.2 10 10s.7 1.5 1.5 1.5H13V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1z"/></svg>' },
         "CAT_ARDUINO":          { group: "Hardware",color: "#00979D", desc: "Setup & Loop",           svg: '<svg viewBox="0 0 16 16" ' + _S + ' stroke-width="1.5"><rect x="4" y="4" width="8" height="8" rx="1"/><path d="M4 6H2M4 10H2M12 6h2M12 10h2M6 4V2M10 4V2M6 12v2M10 12v2"/></svg>' },
+        "CAT_IO":               { group: "Hardware",color: "#00979D", desc: "Arduino pins & I/O",      svg: '<svg viewBox="0 0 16 16" ' + _S + ' stroke-width="1.5"><rect x="4" y="4" width="8" height="8" rx="1"/><path d="M4 6H2M4 10H2M12 6h2M12 10h2M6 4V2M10 4V2M6 12v2M10 12v2"/></svg>' },
+        "CAT_TIME":             { group: "Hardware",color: "#3B82F6", desc: "Delays & timing",         svg: '<svg viewBox="0 0 16 16" ' + _S + ' stroke-width="1.8"><circle cx="8" cy="8" r="5.5"/><path d="M8 5v3.5l2.5 1.5"/></svg>' },
+        "CAT_SERIAL_MESSAGE":   { group: "Communication", color: "#00979D", desc: "Serial print & read", svg: '<svg viewBox="0 0 16 16" ' + _S + ' stroke-width="1.7"><path d="M2 5h9M13 5l-2-2M13 5l-2 2"/><path d="M14 11H5M3 11l2-2M3 11l2 2"/></svg>' },
+        "CAT_CONTROLS":         { group: "Sensor",  color: "#5E60CE", desc: "Buttons, joystick, pot",  svg: '<svg viewBox="0 0 16 16" ' + _S + ' stroke-width="1.6"><circle cx="8" cy="8" r="3"/><path d="M8 2v2M8 12v2M2 8h2M12 8h2"/></svg>' },
+        "CAT_LED":              { group: "Actuator",color: "#FF5722", desc: "LED control",             svg: '<svg viewBox="0 0 16 16" ' + _S + ' stroke-width="1.6"><path d="M6 10V8.5A3 3 0 1 1 10 8.5V10H6z"/><path d="M6 10h4M7 12h2"/></svg>' },
+        "CAT_BUZZER":           { group: "Actuator",color: "#6B8E23", desc: "Buzzer & tones",          svg: '<svg viewBox="0 0 16 16" ' + _S + ' stroke-width="1.7"><path d="M8 11v3"/><path d="M5 9.5A4 4 0 0 1 8 7a4 4 0 0 1 3 2.5"/><path d="M2.5 6.5A7 7 0 0 1 8 3a7 7 0 0 1 5.5 3.5"/><circle cx="8" cy="11" r="1" fill="white" stroke="none"/></svg>' },
         "CAT_ARDUINO_TIME":     { group: "Hardware",color: "#00979D", desc: "Delays & timing",        svg: '<svg viewBox="0 0 16 16" ' + _S + ' stroke-width="1.8"><circle cx="8" cy="8" r="5.5"/><path d="M8 5v3.5l2.5 1.5"/></svg>' },
         "CAT_ARDUINO_CONVERSION":{ group:"Hardware",color: "#00979D", desc: "Convert data types",     svg: '<svg viewBox="0 0 16 16" ' + _S + ' stroke-width="1.8"><path d="M3 5h10M10 2l3 3-3 3"/><path d="M13 11H3M6 8l-3 3 3 3"/></svg>' },
         "CAT_ARDUINO_OUT":      { group: "Hardware",color: "#00979D", desc: "Output: LEDs & signals", svg: '<svg viewBox="0 0 16 16" ' + _S + ' stroke-width="1.6"><path d="M6 10V8.5A3 3 0 1 1 10 8.5V10H6z"/><path d="M6 10h4M6.5 12h3M7.5 14h1"/></svg>' },
-        "CAT_SERVO":            { group: "Actuator",color: "#3498DB", desc: "Servo motors",           svg: '<svg viewBox="0 0 16 16" ' + _S + ' stroke-width="1.6"><circle cx="8" cy="9" r="4"/><circle cx="8" cy="9" r="1.5" fill="white" stroke="none"/><rect x="6" y="2" width="4" height="3" rx="1"/><path d="M8 5v3"/></svg>' },
+        "CAT_SERVO":            { group: "Actuator",color: "#27AE60", desc: "Servo & stepper motors",  svg: '<svg viewBox="0 0 16 16" ' + _S + ' stroke-width="1.6"><circle cx="8" cy="9" r="4"/><circle cx="8" cy="9" r="1.5" fill="white" stroke="none"/><rect x="6" y="2" width="4" height="3" rx="1"/><path d="M8 5v3"/></svg>' },
         "CAT_STEPPER":          { group: "Actuator",color: "#8CA55B", desc: "Stepper motors",         svg: '<svg viewBox="0 0 16 16" ' + _S + ' stroke-width="1.6"><circle cx="8" cy="8" r="5.5"/><path d="M8 4v4l3 3"/><circle cx="8" cy="8" r="1.2" fill="white" stroke="none"/></svg>' },
         "CAT_LEDS":             { group: "Actuator",color: "#C9D7E2", desc: "LED control",            svg: '<svg viewBox="0 0 16 16" ' + _S + ' stroke-width="1.6"><path d="M6 10V8.5A3 3 0 1 1 10 8.5V10H6z"/><path d="M6 10h4M7 12h2"/></svg>' },
-        "CAT_SENSOR":           { group: "Sensor",  color: "#EA9576", desc: "Basic sensors",          svg: '<svg viewBox="0 0 16 16" ' + _S + ' stroke-width="1.6"><circle cx="8" cy="8" r="2.5"/><path d="M4.5 4.5A5 5 0 0 0 3 8a5 5 0 0 0 1.5 3.5M11.5 4.5A5 5 0 0 1 13 8a5 5 0 0 1-1.5 3.5"/></svg>' },
+        "CAT_SENSOR":           { group: "Sensor",  color: "#9B59B6", desc: "LDR, IR, DHT11, Ultrasonic", svg: '<svg viewBox="0 0 16 16" ' + _S + ' stroke-width="1.6"><circle cx="8" cy="8" r="2.5"/><path d="M4.5 4.5A5 5 0 0 0 3 8a5 5 0 0 0 1.5 3.5M11.5 4.5A5 5 0 0 1 13 8a5 5 0 0 1-1.5 3.5"/></svg>' },
         "CAT_SENSORS":          { group: "Sensor",  color: "#2980B9", desc: "Advanced sensors",       svg: '<svg viewBox="0 0 16 16" ' + _S + ' stroke-width="1.6"><circle cx="8" cy="8" r="2"/><path d="M3.5 3.5A6.5 6.5 0 0 0 1.5 8a6.5 6.5 0 0 0 2 4.5M12.5 3.5A6.5 6.5 0 0 1 14.5 8a6.5 6.5 0 0 1-2 4.5M5.5 5.5A3.5 3.5 0 0 0 4.5 8a3.5 3.5 0 0 0 1 2.5M10.5 5.5A3.5 3.5 0 0 1 11.5 8a3.5 3.5 0 0 1-1 2.5"/></svg>' },
         "CAT_KEYPAD":           { group: "Sensor",  color: "#46C286", desc: "Keypad input",           svg: '<svg viewBox="0 0 16 16" ' + _S + ' stroke-width="1.5"><rect x="2" y="2" width="3" height="3" rx=".5"/><rect x="6.5" y="2" width="3" height="3" rx=".5"/><rect x="11" y="2" width="3" height="3" rx=".5"/><rect x="2" y="6.5" width="3" height="3" rx=".5"/><rect x="6.5" y="6.5" width="3" height="3" rx=".5"/><rect x="11" y="6.5" width="3" height="3" rx=".5"/><rect x="4.5" y="11" width="7" height="3" rx=".5"/></svg>' },
         "CAT_RTC_DS3231":       { group: "Sensor",  color: "#0084AD", desc: "Real Time Clock",        svg: '<svg viewBox="0 0 16 16" ' + _S + ' stroke-width="1.8"><circle cx="8" cy="8" r="5.5"/><path d="M8 5v3.5l2.5 1.5"/></svg>' },
@@ -1348,11 +1364,11 @@ BlocklyDuino.openConfigToolbox = function () {
         "CAT_MATRIX_LED_RGB":   { group: "Display", color: "#C9D7E2", desc: "LED matrix",             svg: '<svg viewBox="0 0 16 16" ' + _S + ' stroke-width="1.5"><circle cx="4" cy="4" r="1.2" fill="white" stroke="none"/><circle cx="8" cy="4" r="1.2" fill="white" stroke="none"/><circle cx="12" cy="4" r="1.2" fill="white" stroke="none"/><circle cx="4" cy="8" r="1.2" fill="white" stroke="none"/><circle cx="8" cy="8" r="1.2" fill="white" stroke="none"/><circle cx="12" cy="8" r="1.2" fill="white" stroke="none"/><circle cx="4" cy="12" r="1.2" fill="white" stroke="none"/><circle cx="8" cy="12" r="1.2" fill="white" stroke="none"/><circle cx="12" cy="12" r="1.2" fill="white" stroke="none"/></svg>' },
         "CAT_DISPLAY":            { group: "Display", color: "#2980B9", desc: "LCD & OLED screens",     svg: '<svg viewBox="0 0 16 16" ' + _S + ' stroke-width="1.6"><rect x="2" y="3" width="12" height="10" rx="2"/><path d="M5 8h6M8 6v4"/></svg>' },
         "CAT_ADAFRUIT_SSD1306": { group: "Display", color: "#2980B9", desc: "SSD1306 OLED",           svg: '<svg viewBox="0 0 16 16" ' + _S + ' stroke-width="1.6"><rect x="2" y="3" width="12" height="10" rx="2"/><path d="M5 8h6M8 6v4"/></svg>' },
-        "CAT_BLUETOOTH_MISC":   { group: "Comms",   color: "#0075E1", desc: "Bluetooth",              svg: '<svg viewBox="0 0 16 16" ' + _S + ' stroke-width="1.8"><path d="M6 5l4 3-4 3V3l4 3-4 3"/></svg>' },
-        "CAT_RF433":            { group: "Comms",   color: "#9BACB4", desc: "RF 433MHz",              svg: '<svg viewBox="0 0 16 16" ' + _S + ' stroke-width="1.7"><path d="M8 11v4"/><path d="M5.5 9.5A3.5 3.5 0 0 1 8 6a3.5 3.5 0 0 1 2.5 3.5"/><path d="M3 8A5.5 5.5 0 0 1 8 3a5.5 5.5 0 0 1 5 5"/><circle cx="8" cy="11" r="1" fill="white" stroke="none"/></svg>' },
-        "CAT_RFID":             { group: "Comms",   color: "#9BACB4", desc: "RFID / NFC",             svg: '<svg viewBox="0 0 16 16" ' + _S + ' stroke-width="1.6"><rect x="2" y="4" width="8" height="8" rx="1"/><path d="M12 6a3 3 0 0 1 0 4"/><path d="M12 4a5 5 0 0 1 0 8"/></svg>' },
-        "CAT_LORA":             { group: "Comms",   color: "#6C5CE7", desc: "LoRa long-range",        svg: '<svg viewBox="0 0 16 16" ' + _S + ' stroke-width="1.7"><path d="M8 11v3"/><path d="M5 9.5A4 4 0 0 1 8 7a4 4 0 0 1 3 2.5"/><path d="M2 8A7 7 0 0 1 8 3a7 7 0 0 1 6 5"/><circle cx="8" cy="11" r="1" fill="white" stroke="none"/></svg>' },
-        "CAT_ETHERNET":         { group: "Comms",   color: "#FFCC66", desc: "Ethernet / WiFi",        svg: '<svg viewBox="0 0 16 16" ' + _S + ' stroke-width="1.6"><rect x="6" y="10" width="4" height="3" rx=".5"/><rect x="1" y="5" width="4" height="3" rx=".5"/><rect x="6" y="2" width="4" height="3" rx=".5"/><rect x="11" y="5" width="4" height="3" rx=".5"/><path d="M8 5v5M3 8l5-3 5 3"/></svg>' },
+        "CAT_BLUETOOTH_MISC":   { group: "Communication", color: "#0075E1", desc: "Bluetooth",         svg: '<svg viewBox="0 0 16 16" ' + _S + ' stroke-width="1.8"><path d="M6 5l4 3-4 3V3l4 3-4 3"/></svg>' },
+        "CAT_RF433":            { group: "Communication", color: "#9BACB4", desc: "RF 433MHz",         svg: '<svg viewBox="0 0 16 16" ' + _S + ' stroke-width="1.7"><path d="M8 11v4"/><path d="M5.5 9.5A3.5 3.5 0 0 1 8 6a3.5 3.5 0 0 1 2.5 3.5"/><path d="M3 8A5.5 5.5 0 0 1 8 3a5.5 5.5 0 0 1 5 5"/><circle cx="8" cy="11" r="1" fill="white" stroke="none"/></svg>' },
+        "CAT_RFID":             { group: "Communication", color: "#9BACB4", desc: "RFID / NFC",        svg: '<svg viewBox="0 0 16 16" ' + _S + ' stroke-width="1.6"><rect x="2" y="4" width="8" height="8" rx="1"/><path d="M12 6a3 3 0 0 1 0 4"/><path d="M12 4a5 5 0 0 1 0 8"/></svg>' },
+        "CAT_LORA":             { group: "Communication", color: "#6C5CE7", desc: "LoRa long-range",   svg: '<svg viewBox="0 0 16 16" ' + _S + ' stroke-width="1.7"><path d="M8 11v3"/><path d="M5 9.5A4 4 0 0 1 8 7a4 4 0 0 1 3 2.5"/><path d="M2 8A7 7 0 0 1 8 3a7 7 0 0 1 6 5"/><circle cx="8" cy="11" r="1" fill="white" stroke="none"/></svg>' },
+        "CAT_ETHERNET":         { group: "Communication", color: "#FFCC66", desc: "Ethernet / WiFi",   svg: '<svg viewBox="0 0 16 16" ' + _S + ' stroke-width="1.6"><rect x="6" y="10" width="4" height="3" rx=".5"/><rect x="1" y="5" width="4" height="3" rx=".5"/><rect x="6" y="2" width="4" height="3" rx=".5"/><rect x="11" y="5" width="4" height="3" rx=".5"/><path d="M8 5v5M3 8l5-3 5 3"/></svg>' },
         "CAT_DRONE":            { group: "Robot",   color: "#6C5CE7", desc: "Drone control",          svg: '<svg viewBox="0 0 16 16" ' + _S + ' stroke-width="1.5"><circle cx="8" cy="8" r="2"/><path d="M8 6V4M8 12v-2M6 8H4M12 8h-2"/><circle cx="4" cy="4" r="1.5"/><circle cx="12" cy="4" r="1.5"/><circle cx="4" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/></svg>' },
         "CAT_BLINKBOT":         { group: "Robot",   color: "#FF6680", desc: "BlinkBot robot",         svg: '<svg viewBox="0 0 16 16" ' + _S + ' stroke-width="1.6"><rect x="3" y="5" width="10" height="8" rx="2"/><circle cx="6" cy="8.5" r="1.2" fill="white" stroke="none"/><circle cx="10" cy="8.5" r="1.2" fill="white" stroke="none"/><path d="M6 11h4M6 2h4M8 2v3"/></svg>' },
         "CAT_OTTO":             { group: "Robot",   color: "#FFAB19", desc: "Otto robot",             svg: '<svg viewBox="0 0 16 16" ' + _S + ' stroke-width="1.6"><rect x="3" y="2" width="10" height="8" rx="2"/><circle cx="6" cy="6" r="1.5" fill="white" stroke="none"/><circle cx="10" cy="6" r="1.5" fill="white" stroke="none"/><path d="M5 12v2M11 12v2M5 10v2M11 10v2"/></svg>' },
@@ -1373,7 +1389,7 @@ BlocklyDuino.openConfigToolbox = function () {
     // create a card for each toolbox category
     $("#toolbox").children("category").each(function () {
         var catId = $(this).attr("id");
-        var label = Blockly.Msg[catId];
+        var label = Blockly.Msg[catId] || $(this).attr('name');
         if (!label) { return; }
         n = loadIds.search(catId);
 
@@ -1423,7 +1439,6 @@ BlocklyDuino.changeToolbox = function () {
     // The #toolbox DOM element always has the full set of categories for the
     // current mode (populated by openConfigToolbox / applyMode), so we can
     // look up each checked ID safely without touching the URL or reloading.
-    var toolboxEl = document.getElementById('toolbox');
     var newXml = '<xml id="toolbox">';
     toolboxIds.forEach(function (id) {
         var el = id ? document.getElementById(id) : null;
@@ -1749,7 +1764,7 @@ BlocklyDuino.applyCategoryColors = function () {
 
 /**
  * Hide a specific category by its name (from XML id attribute or displayed label)
- * @param {string} categoryName - The category name to hide (e.g., "CAT_VARIABLES", "CAT_FUNCTIONS", or the displayed label)
+ * @param {string} categoryName - The category name to hide (e.g., "CAT_VARIABLES", or the displayed label)
  */
 BlocklyDuino.hideCategoryByName = function (categoryName) {
     if (!categoryName) return;

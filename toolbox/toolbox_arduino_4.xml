@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <toolbox>
-	<parametre id="defaultCategories">CAT_LOGIC,CAT_LOOPS,CAT_VARIABLES,CAT_FUNCTIONS,CAT_MATH,CAT_ARDUINO</parametre>
+	<parametre id="defaultCategories">CAT_LOGIC,CAT_LOOPS,CAT_VARIABLES,CAT_ARDUINO_FUNCTIONS,CAT_MATH,CAT_ARDUINO</parametre>
 	<category name="Logic" id="CAT_LOGIC" colour="#FF69B4">
 		<block type="controls_if"></block>
 		<block type="controls_switch"></block>
@@ -136,7 +136,13 @@
 	</category>
 	<category name="CAT_VARIABLES" custom="VARIABLE" colour="#FF8C1A">
 	</category>
-	<category name="CAT_FUNCTIONS" custom="PROCEDURE" colour="#FF6680"></category>
+	<category name="CAT_ARDUINO_FUNCTIONS" colour="#FF6680">
+		<block type="arduino_func_define_void"></block>
+		<block type="arduino_func_define_return"></block>
+		<block type="arduino_func_return"></block>
+		<block type="arduino_func_call_void"></block>
+		<block type="arduino_func_call_return"></block>
+	</category>
 	<sep></sep>
 	<category name="CAT_ARDUINO" colour="#00979D">
 		<block type="base_begin"></block>

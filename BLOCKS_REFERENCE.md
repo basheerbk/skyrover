@@ -184,21 +184,19 @@ Store & use values — *"Store & use values"*
 
 ---
 
-### Functions
+### Functions (C-style)
 
-**Category ID:** `CAT_FUNCTIONS` | **Colour:** `#FF6680` (pink)
+**Category ID:** `CAT_ARDUINO_FUNCTIONS` | **Colour:** `#FF6680` (pink)
 
-Create reusable blocks of code — *"Create reusable blocks of code"*
+User-defined Arduino/C functions — prototypes are emitted before `setup()`; definitions must sit as **top-level** blocks on the workspace (not inside setup/loop).
 
-> Function blocks are auto-generated. Use **"Create function…"** to define one.
-
-| Block Type | Text on Block | Output |
-|---|---|---|
-| `procedures_defnoreturn` | **to** `[name]` **do** … | Definition |
-| `procedures_defreturn` | **to** `[name]` **do** … **return** `[value]` | Definition |
-| `procedures_callnoreturn` | `[name]` | Statement call |
-| `procedures_callreturn` | `[name]` | Value call |
-| `procedures_ifreturn` | **if** `[condition]` **return** `[value]` | Statement |
+| Block Type | Role |
+|---|---|
+| `arduino_func_define_void` | Define `void name(...)` with statement body; parameters via gear mutator |
+| `arduino_func_define_return` | Define typed return function; use `arduino_func_return` inside the body |
+| `arduino_func_return` | `return` with value expression |
+| `arduino_func_call_void` | **Run** [name] **letter** / **word** value slots (gear adds slots; same name as define) |
+| `arduino_func_call_return` | **Get** [name] **letter** / **word** value slots — expression shape |
 
 ---
 

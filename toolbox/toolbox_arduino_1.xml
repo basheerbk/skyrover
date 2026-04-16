@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <toolbox>
-	<parametre id="defaultCategories">CAT_LOGIC,CAT_LOOPS,CAT_MATH,CAT_ARRAY,CAT_TEXT,CAT_VARIABLES,CAT_FUNCTIONS,CAT_ARDUINO
+	<parametre id="defaultCategories">CAT_LOGIC,CAT_LOOPS,CAT_MATH,CAT_ARRAY,CAT_TEXT,CAT_VARIABLES,CAT_ARDUINO
 	</parametre>
 	<category name="Logic" id="CAT_LOGIC" colour="#FF69B4">
 		<block type="controls_if"></block>
@@ -106,7 +106,6 @@
 		<block type="variables_set"></block>
 		<block type="variables_get"></block-->
 	</category>
-	<category name="CAT_FUNCTIONS" custom="PROCEDURE" colour="#FF6680"></category>
 	<sep></sep>
 	<category name="CAT_MBOT_1" colour="#33C7F2">
 		<block type="mbot_forward"></block>

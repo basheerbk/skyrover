@@ -124,7 +124,7 @@ const CATEGORY_TOOLTIPS = {
     'Loop':                'Repeat actions multiple times',
     'Loops':               'Repeat actions multiple times',
     'Variables':           'Store & use values',
-    'Functions':           'Create reusable blocks of code',
+    'Functions':           'Define and call C-style Arduino functions (void and typed returns)',
     'Math':                'Numbers & calculations',
     'Text':                'Words, phrases, and single letters',
     'Arduino':             'Pins, digital/analog I/O, PWM, and Serial',

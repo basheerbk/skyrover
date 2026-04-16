@@ -1771,6 +1771,7 @@ nav a i[class*="caret"] {
 /* Mode: Basic / Advanced — dropdown (matches other header pills) */
 .mode-dropdown-wrap {
   flex-shrink: 0 !important;
+  position: relative !important;
 }
 .mode-dropdown-toggle {
   background: #fff !important;
@@ -1805,27 +1806,47 @@ nav a i[class*="caret"] {
   margin-top: 0 !important;
 }
 .mode-dropdown-menu {
-  min-width: 140px !important;
-  margin-top: 6px !important;
+  min-width: 100% !important;
+  width: 100% !important;
+  max-width: min(92vw, 320px) !important;
+  margin-top: 0 !important;
+  top: calc(100% - 1px) !important;
+  left: 0 !important;
+  right: auto !important;
   border-radius: 10px !important;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18) !important;
   border: 1px solid rgba(142, 36, 170, 0.2) !important;
   padding: 4px 0 !important;
   font-family: inherit !important;
+  overflow: hidden !important;
 }
-.mode-dropdown-menu > li > a {
+.mode-dropdown-menu > li > a,
+.mode-dropdown-menu > li > a:visited,
+.mode-dropdown-menu > li > a:focus {
   padding: 10px 16px !important;
   font-size: 13px !important;
   font-weight: 600 !important;
-  color: #333 !important;
+  color: #2f2f38 !important;
+  background: #ffffff !important;
+  white-space: nowrap !important;
+}
+.mode-dropdown-wrap.open > .mode-dropdown-toggle {
+  border-bottom-left-radius: 0 !important;
+  border-bottom-right-radius: 0 !important;
+}
+.mode-dropdown-wrap.open > .mode-dropdown-menu {
+  border-top-left-radius: 10px !important;
+  border-top-right-radius: 10px !important;
 }
 .mode-dropdown-menu > li.active > a,
+.mode-dropdown-menu > li.active > a:visited,
 .mode-dropdown-menu > li.active > a:hover,
 .mode-dropdown-menu > li.active > a:focus {
   background: #f3e5f5 !important;
   color: #6a1b9a !important;
 }
-.mode-dropdown-menu > li:not(.active) > a:hover {
+.mode-dropdown-menu > li:not(.active) > a:hover,
+.mode-dropdown-menu > li:not(.active) > a:focus {
   background: #fafafa !important;
   color: #6a1b9a !important;
 }
