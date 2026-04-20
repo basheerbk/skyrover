@@ -169,6 +169,22 @@
   text-decoration: none !important;
 }
 
+/* Use exactly the same typography model for top-right controls as top-left nav links. */
+#header.header-modern #nav_hor > ul > li > a,
+#header.header-modern #sideSerialControls > button,
+#header.header-modern #sideSerialControls > select,
+#header.header-modern #sideSerialControls .mode-dropdown-toggle,
+#sideSerialControls > button,
+#sideSerialControls > select,
+#sideSerialControls .mode-dropdown-toggle {
+  font-family: inherit !important;
+  font-size: calc(var(--hdr-link-font, var(--header-link-font, 13px)) * 0.9) !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.35px !important;
+  line-height: 1 !important;
+  text-transform: uppercase !important;
+}
+
 #header.header-modern #nav_hor > ul > li > a:hover,
 #header.header-modern #nav_hor > ul > li > a:focus {
   background: rgba(255, 255, 255, 0.18) !important;
@@ -231,8 +247,20 @@
   min-height: var(--hdr-control-h) !important;
   border-radius: 10px !important;
   padding: 0 12px !important;
-  font-size: var(--hdr-control-font) !important;
   line-height: 1 !important;
+  text-decoration: none !important;
+  -webkit-font-smoothing: antialiased !important;
+  text-rendering: optimizeLegibility !important;
+}
+
+/* Keep AI Mentor aligned with the same control typography everywhere. */
+#header.header-modern #sideSerialControls #btn_ai_assistant,
+#btn_ai_assistant {
+  font-family: inherit !important;
+  font-size: var(--hdr-link-font, var(--header-link-font, 13px)) !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.35px !important;
+  text-transform: uppercase !important;
 }
 
 #header.header-modern #sideSerialControls .mode-dropdown-wrap {

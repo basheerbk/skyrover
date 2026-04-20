@@ -30,6 +30,75 @@ function emptyParamList() {
   return [];
 }
 
+function collectUserFunctionOptions(workspace) {
+  var seen = Object.create(null);
+  var options = [];
+  if (!workspace) {
+    return [['myFunction', 'myFunction']];
+  }
+  var blocks = workspace.getAllBlocks(false);
+  for (var i = 0; i < blocks.length; i++) {
+    var b = blocks[i];
+    if (b.type !== 'arduino_func_define_void' && b.type !== 'arduino_func_define_return') {
+      continue;
+    }
+    if (b.getParent && b.getParent()) {
+      continue;
+    }
+    var name = (b.getFieldValue('NAME') || '').trim();
+    if (!name || seen[name]) {
+      continue;
+    }
+    seen[name] = true;
+    options.push([name, name]);
+  }
+  if (!options.length) {
+    options.push(['myFunction', 'myFunction']);
+  }
+  return options;
+}
+
+function functionNameDropdownOptions() {
+  var sourceBlock = this && this.getSourceBlock ? this.getSourceBlock() : null;
+  var workspace = sourceBlock && sourceBlock.workspace ? sourceBlock.workspace : null;
+  var options = collectUserFunctionOptions(workspace);
+  if (!sourceBlock) {
+    return options;
+  }
+  var current = sourceBlock.getFieldValue('NAME');
+  if (current) {
+    var found = false;
+    for (var i = 0; i < options.length; i++) {
+      if (options[i][1] === current) {
+        found = true;
+        break;
+      }
+    }
+    if (!found) {
+      options.unshift([current, current]);
+    }
+  }
+  return options;
+}
+
+function syncFunctionNameWithAvailableOptions(block) {
+  if (!block || !block.workspace) {
+    return;
+  }
+  var options = collectUserFunctionOptions(block.workspace);
+  var current = block.getFieldValue('NAME');
+  var hasCurrent = false;
+  for (var i = 0; i < options.length; i++) {
+    if (options[i][1] === current) {
+      hasCurrent = true;
+      break;
+    }
+  }
+  if (!hasCurrent && options.length) {
+    block.setFieldValue(options[0][1], 'NAME');
+  }
+}
+
 /** Statement call: warm coral — “do something” */
 var COLOUR_FUNC_CALL_DO = '#F06292';
 /** Value call: soft purple — “gives a number back” */
@@ -236,6 +305,9 @@ Blockly.Blocks['arduino_func_call_void'] = {
     this.argCount_ = (state && typeof state.argCount === 'number') ? state.argCount : 0;
     this.updateShape_();
   },
+  onchange: function () {
+    syncFunctionNameWithAvailableOptions(this);
+  },
   updateShape_: function () {
     if (this.getInput('HDR')) {
       this.removeInput('HDR');
@@ -248,7 +320,7 @@ Blockly.Blocks['arduino_func_call_void'] = {
     this.setInputsInline(true);
     this.appendDummyInput('HDR')
       .appendField(Blockly.Msg.ARDUINO_FUNC_RUN_LABEL || 'Run')
-      .appendField(new Blockly.FieldTextInput('mySteps'), 'NAME');
+      .appendField(new Blockly.FieldDropdown(functionNameDropdownOptions), 'NAME');
     for (var j = 0; j < this.argCount_; j++) {
       var inp = this.appendValueInput('ARG' + j);
       if (j === 0) {
@@ -275,6 +347,9 @@ Blockly.Blocks['arduino_func_call_return'] = {
   compose: Blockly.Blocks['arduino_func_call_void'].compose,
   saveExtraState: Blockly.Blocks['arduino_func_call_void'].saveExtraState,
   loadExtraState: Blockly.Blocks['arduino_func_call_void'].loadExtraState,
+  onchange: function () {
+    syncFunctionNameWithAvailableOptions(this);
+  },
   updateShape_: function () {
     if (this.getInput('HDR')) {
       this.removeInput('HDR');
@@ -287,7 +362,7 @@ Blockly.Blocks['arduino_func_call_return'] = {
     this.setInputsInline(true);
     this.appendDummyInput('HDR')
       .appendField(Blockly.Msg.ARDUINO_FUNC_GET_LABEL || 'Get')
-      .appendField(new Blockly.FieldTextInput('readNumber'), 'NAME');
+      .appendField(new Blockly.FieldDropdown(functionNameDropdownOptions), 'NAME');
     for (var j = 0; j < this.argCount_; j++) {
       var inp = this.appendValueInput('ARG' + j);
       if (j === 0) {

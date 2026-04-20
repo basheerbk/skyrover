@@ -200,7 +200,7 @@ async function collectAvrUnoIntelHexPath(buildDir) {
 }
 
 app.use(express.json());
-app.use(express.static(path.join(__dirname, '..')));
+app.use(express.static(path.join(__dirname, '..'), { index: false }));
 
 // CORS middleware
 app.use((req, res, next) => {
@@ -548,7 +548,12 @@ app.get('/status', (req, res) => {
 });
 
 app.get('/', (req, res) => {
-  // Serve index.html (same as Python version)
+  // Serve web landing page at root.
+  res.sendFile(path.join(__dirname, '..', 'landing.html'));
+});
+
+app.get('/ide', (req, res) => {
+  // Keep a stable friendly route for the Blockly IDE itself.
   res.sendFile(path.join(__dirname, '..', 'index.html'));
 });
 

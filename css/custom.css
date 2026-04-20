@@ -1862,6 +1862,7 @@ nav a i[class*="caret"] {
   padding: 2px 14px !important;
   min-height: 28px !important;
   height: 28px !important;
+  text-transform: uppercase;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12) !important;
   transition: background 0.2s ease, color 0.2s ease, border 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease !important;
 }
